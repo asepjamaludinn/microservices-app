@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  # Database untuk Auth Service
+  user-db:
+    image: postgres:15-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root_password
+      POSTGRES_DB: user_db
+    ports:
+      - "54321:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  # Database untuk Project Service (Katalog & Resep)
+  project-db:
+    image: postgres:15-alpine
+    container_name: project-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root_password
+      POSTGRES_DB: project_db
+    ports:
+      - "54322:5432"
+    volumes:
+      - project-db-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+volumes:
+  user-db-data:
+  project-db-data:
+
+networks:
+  microservices-network:
+    driver: bridge
