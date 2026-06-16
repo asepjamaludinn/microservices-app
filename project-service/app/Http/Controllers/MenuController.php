@@ -33,6 +33,8 @@ class MenuController extends Controller
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description,
+            'image_url' => $request->image_url, 
+            'rating' => $request->rating ?? 0,  
         ]);
 
         return response()->json([
@@ -63,9 +65,9 @@ class MenuController extends Controller
     /**
      * ADMIN ONLY: Melihat daftar menu beserta resep rahasia dan modalnya.
      */
-    public function getInternalRecipes()
+   public function getInternalRecipes()
     {
-        $menus = Menu::with('recipe')->get();
+        $menus = Menu::with('recipe')->orderBy('created_at', 'desc')->get();
         return response()->json($menus);
     }
 }

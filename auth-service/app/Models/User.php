@@ -10,12 +10,14 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject 
 {
     use HasFactory, Notifiable;
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role_id', 
+        'role', 
     ];
 
     protected $hidden = [
@@ -31,12 +33,6 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-  
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
-
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -45,7 +41,7 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            'role' => $this->role ? $this->role->name : null,
+            'role' => $this->role, 
         ];
     }
 }

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -7,7 +6,7 @@ export async function POST(request: Request) {
 
     const authUrl = process.env.AUTH_SERVICE_URL || "http://127.0.0.1:8001";
 
-    const backendResponse = await fetch(`${authUrl}/api/login`, {
+    const backendResponse = await fetch(`${authUrl}/api/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -17,30 +16,14 @@ export async function POST(request: Request) {
 
     if (!backendResponse.ok) {
       return NextResponse.json(
-        { error: data.error || "Login gagal" },
+        { error: data.message || data.error || "Registrasi gagal" },
         { status: backendResponse.status },
       );
     }
 
-    const token = data.access_token;
-
-    const cookieStore = await cookies();
-    cookieStore.set({
-      name: "jwt_token",
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: data.expires_in,
-      path: "/",
-    });
-
     return NextResponse.json(
-      {
-        message: "Login berhasil",
-        user: data.user,
-      },
-      { status: 200 },
+      { message: "Registrasi berhasil, silakan login", user: data.user },
+      { status: 201 },
     );
   } catch (error) {
     return NextResponse.json(

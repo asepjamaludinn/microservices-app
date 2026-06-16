@@ -6,53 +6,36 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest; 
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
 
 class AuthController extends Controller
 {
-    /**
-     * Daftarkan user baru.
-     */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
-            'role_id' => 'nullable|exists:roles,id', // Opsional, validasi ke tabel roles
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
-        }
-
-        // Simpan user ke database
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id ?? 2, // Asumsi role_id '2' adalah 'user/customer'
+            'role' => User::ROLE_USER,
         ]);
-
-        // Opsional: Langsung login setelah register
-        // $token = Auth::guard('api')->login($user);
-        // return $this->respondWithToken($token);
 
         return response()->json([
             'message' => 'User berhasil didaftarkan.',
-            'user' => $user
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role
+            ]
         ], 201);
     }
 
-    /**
-     * Proses Login dan dapatkan JWT.
-     */
-    public function login(Request $request)
+    public function login(LoginRequest $request) 
     {
         $credentials = $request->only('email', 'password');
 
-        // Autentikasi menggunakan guard 'api' (JWT)
         if (! $token = Auth::guard('api')->attempt($credentials)) {
             return response()->json(['error' => 'Kredensial tidak valid (Email/Password salah)'], 401);
         }
@@ -60,27 +43,42 @@ class AuthController extends Controller
         return $this->respondWithToken($token);
     }
 
-    /**
-     * Ambil data user yang sedang login (berdasarkan token).
-     */
     public function me()
     {
         return response()->json(Auth::guard('api')->user());
     }
 
-    /**
-     * Hapus token (Logout).
-     */
     public function logout()
     {
         Auth::guard('api')->logout();
-
         return response()->json(['message' => 'Berhasil logout']);
     }
 
-    /**
-     * Struktur ulang format balasan Token.
-     */
+    public function updatePassword(UpdatePasswordRequest $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response()->json(['error' => 'Password lama tidak sesuai'], 400);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password berhasil diperbarui']);
+    }
+
+    public function directResetPassword(ResetPasswordRequest $request)
+    {
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password berhasil direset. Silakan login dengan password baru.'
+        ]);
+    }
+
     protected function respondWithToken($token)
     {
         return response()->json([
