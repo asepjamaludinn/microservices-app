@@ -11,6 +11,10 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+
 type Menu = {
   id: number;
   name: string;
@@ -32,7 +36,6 @@ export default function MenusPage() {
       try {
         const res = await fetch("/api/menus/internal");
         const data = await res.json();
-
         if (res.ok) {
           setMenus(data);
         }
@@ -40,14 +43,13 @@ export default function MenusPage() {
         setLoading(false);
       }
     };
-
     fetchMenus();
   }, []);
 
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#c94430] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -65,10 +67,10 @@ export default function MenusPage() {
           </p>
         </div>
 
-        <button className="flex items-center justify-center gap-2 rounded-xl bg-[#c94430] px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-[#b03a28]">
-          <Plus size={18} />
+        <Button className="rounded-xl bg-primary px-4 py-5 font-semibold text-primary-foreground hover:bg-primary-hover shadow-sm">
+          <Plus size={18} className="mr-2" />
           Tambah Menu
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_1fr]">
@@ -82,7 +84,7 @@ export default function MenusPage() {
           <div className="space-y-6 text-sm">
             <div>
               <h4 className="mb-3 font-semibold text-slate-700">Category</h4>
-              <div className="space-y-2 text-slate-500">
+              <div className="space-y-3 text-slate-500">
                 {[
                   "All",
                   "Chicken",
@@ -91,13 +93,16 @@ export default function MenusPage() {
                   "Burger",
                   "Dessert",
                 ].map((item) => (
-                  <label key={item} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="accent-[#c94430]"
+                  <label
+                    key={item}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <Checkbox
+                      id={item}
                       defaultChecked={item === "All"}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    {item}
+                    <span className="leading-none">{item}</span>
                   </label>
                 ))}
               </div>
@@ -105,12 +110,17 @@ export default function MenusPage() {
 
             <div>
               <h4 className="mb-3 font-semibold text-slate-700">Rating</h4>
-              <div className="space-y-2 text-slate-500">
+              <div className="space-y-3 text-slate-500">
                 {[5, 4, 3, 2, 1].map((rate) => (
-                  <label key={rate} className="flex items-center gap-2">
-                    <input type="checkbox" className="accent-[#c94430]" />
-                    <span className="text-yellow-400">{"★".repeat(rate)}</span>
-                    <span>{rate}</span>
+                  <label
+                    key={rate}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <Checkbox className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                    <span className="flex items-center gap-1 text-yellow-400">
+                      {"★".repeat(rate)}
+                      <span className="text-slate-500 ml-1">{rate}</span>
+                    </span>
                   </label>
                 ))}
               </div>
@@ -127,16 +137,16 @@ export default function MenusPage() {
                 size={18}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               />
-              <input
+              <Input
                 type="text"
                 placeholder="Search for menu"
-                className="w-full rounded-xl border border-slate-100 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#c94430]"
+                className="w-full rounded-xl border-slate-100 bg-slate-50 py-5 pl-10 pr-4 text-sm focus-visible:ring-primary/20 focus-visible:border-primary"
               />
             </div>
 
-            <button className="rounded-xl bg-[#c94430] px-5 py-2.5 text-sm font-semibold text-white">
+            <Button className="rounded-xl bg-primary px-6 py-5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
               Search
-            </button>
+            </Button>
           </div>
 
           {/* Grid Menu */}
@@ -148,7 +158,7 @@ export default function MenusPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {menus.map((menu) => (
-                <div key={menu.id} className="group">
+                <div key={menu.id} className="group cursor-pointer">
                   <div className="relative h-44 overflow-hidden rounded-2xl bg-slate-100">
                     {menu.image_url ? (
                       <img
@@ -162,42 +172,45 @@ export default function MenusPage() {
                       </div>
                     )}
 
-                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#c94430]">
+                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-primary">
                       Manageable
                     </div>
 
                     <div className="absolute right-3 top-3 flex gap-2">
-                      <button className="rounded-lg bg-white p-2 text-blue-600 shadow-sm hover:bg-blue-50">
-                        <Edit2 size={16} />
-                      </button>
-                      <button className="rounded-lg bg-white p-2 text-red-600 shadow-sm hover:bg-red-50">
-                        <Trash2 size={16} />
-                      </button>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8 text-blue-600 hover:bg-blue-50 shadow-sm"
+                      >
+                        <Edit2 size={14} />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8 text-red-600 hover:bg-red-50 shadow-sm"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
                   </div>
 
                   <div className="mt-3">
-                    <h3 className="line-clamp-1 text-lg font-bold tracking-tight text-slate-900">
+                    <h3 className="line-clamp-1 text-lg font-bold tracking-tight text-slate-900 group-hover:text-primary transition-colors">
                       {menu.name}
                     </h3>
-
-                    <p className="mt-0.5 text-xs font-semibold text-[#c94430]">
+                    <p className="mt-0.5 text-xs font-semibold text-primary">
                       {menu.category?.name || "Main Course"}
                     </p>
 
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-center gap-1 text-yellow-400">
                         <Star size={15} fill="currentColor" />
-                        <Star size={15} fill="currentColor" />
-                        <Star size={15} fill="currentColor" />
-                        <Star size={15} fill="currentColor" />
-                        <Star size={15} fill="currentColor" />
                         <span className="ml-1 text-sm font-semibold text-slate-600">
                           {menu.rating || "0.0"}
                         </span>
                       </div>
 
-                      <p className="font-bold text-[#c94430]">
+                      <p className="font-bold text-primary">
                         Rp {Number(menu.price).toLocaleString("id-ID")}
                       </p>
                     </div>

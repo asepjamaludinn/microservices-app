@@ -1,5 +1,5 @@
-import Sidebar from "@/components/dashboard/Sidebar";
-import Header from "@/components/dashboard/Header";
+import AdminSidebar from "@/components/layouts/admin/AdminSidebar";
+import AdminHeader from "@/components/layouts/admin/AdminHeader";
 
 export default function DashboardLayout({
   children,
@@ -8,14 +8,9 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800">
-      {/* Sidebar akan selalu ada di semua sub-halaman dashboard */}
-      <Sidebar />
-
+      <AdminSidebar />
       <main className="flex-1 overflow-y-auto flex flex-col">
-        {/* Header akan selalu ada di atas */}
-        <Header />
-
-        {/* {children} adalah tempat di mana konten halaman (page.tsx) akan disuntikkan */}
+        <AdminHeader />
         <div className="p-8 flex-1">{children}</div>
       </main>
     </div>
