@@ -2,14 +2,10 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\BaseApiRequest;
 
-class LoginRequest extends FormRequest
+class LoginRequest extends BaseApiRequest 
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
 
     public function rules(): array
     {

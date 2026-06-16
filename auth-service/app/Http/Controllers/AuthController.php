@@ -22,14 +22,13 @@ class AuthController extends Controller
             'role' => User::ROLE_USER,
         ]);
 
-        return response()->json([
-            'message' => 'User berhasil didaftarkan.',
-            'user' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role
-            ]
-        ], 201);
+        $userData = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role
+        ];
+
+        return $this->successResponse($userData, 'User berhasil didaftarkan.', 201);
     }
 
     public function login(LoginRequest $request) 
@@ -37,7 +36,7 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (! $token = Auth::guard('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Kredensial tidak valid (Email/Password salah)'], 401);
+            return $this->errorResponse('Kredensial tidak valid (Email/Password salah)', 401);
         }
 
         return $this->respondWithToken($token);
@@ -45,13 +44,13 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json(Auth::guard('api')->user());
+        return $this->successResponse(Auth::guard('api')->user(), 'Data user berhasil diambil.');
     }
 
     public function logout()
     {
         Auth::guard('api')->logout();
-        return response()->json(['message' => 'Berhasil logout']);
+        return $this->successResponse(null, 'Berhasil logout');
     }
 
     public function updatePassword(UpdatePasswordRequest $request)
@@ -59,13 +58,13 @@ class AuthController extends Controller
         $user = Auth::guard('api')->user();
 
         if (!Hash::check($request->old_password, $user->password)) {
-            return response()->json(['error' => 'Password lama tidak sesuai'], 400);
+            return $this->errorResponse('Password lama tidak sesuai', 400);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message' => 'Password berhasil diperbarui']);
+        return $this->successResponse(null, 'Password berhasil diperbarui');
     }
 
     public function directResetPassword(ResetPasswordRequest $request)
@@ -74,18 +73,18 @@ class AuthController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json([
-            'message' => 'Password berhasil direset. Silakan login dengan password baru.'
-        ]);
+        return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru.');
     }
 
     protected function respondWithToken($token)
     {
-        return response()->json([
+        $data = [
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => Auth::guard('api')->factory()->getTTL() * 60, 
             'user' => Auth::guard('api')->user()
-        ]);
+        ];
+
+        return $this->successResponse($data, 'Login berhasil');
     }
 }
