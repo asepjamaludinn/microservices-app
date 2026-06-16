@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\Menu;
-use Illuminate\Http\Request;
+use App\Models\Recipe;
+use App\Http\Requests\StoreMenuRequest;
+use App\Http\Requests\StoreRecipeRequest;
 
 class MenuController extends Controller
 {
@@ -13,61 +14,90 @@ class MenuController extends Controller
      */
     public function index()
     {
-        $menus = Menu::with('category')->get();
-        return response()->json($menus);
+        $menus = Menu::with('category')->where('is_available', true)->get();
+        return $this->successResponse($menus, 'Katalog menu berhasil diambil.');
     }
 
     /**
      * ADMIN ONLY: Menambah menu baru ke katalog.
      */
-    public function storeMenu(Request $request)
+    public function storeMenu(StoreMenuRequest $request)
     {
-        $category = Category::firstOrCreate(
-            ['slug' => 'main-course'],
-            ['name' => 'Main Course']
-        );
-
         $menu = Menu::create([
-            'category_id' => $category->id,
+            'category_id' => $request->category_id,
             'user_id' => $request->attributes->get('auth_user_id'), 
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description,
             'image_url' => $request->image_url, 
-            'rating' => $request->rating ?? 0,  
+            'is_available' => $request->is_available ?? true,
         ]);
 
-        return response()->json([
-            'message' => 'Menu berhasil ditambahkan oleh Admin',
-            'data' => $menu
-        ], 201);
+        return $this->successResponse($menu, 'Menu berhasil ditambahkan ke katalog.', 201);
     }
 
     /**
-     * ADMIN ONLY: Menambah resep rahasia dan HPP (Harga Pokok) ke menu tertentu.
+     * ADMIN ONLY: Menambah resep rahasia dan menyimpan relasi bahan (Pivot Table).
      */
-    public function storeRecipe(Request $request, $menuId)
+    public function storeRecipe(StoreRecipeRequest $request, $menuId)
     {
         $menu = Menu::findOrFail($menuId);
+        $recipe = Recipe::updateOrCreate(
+            ['menu_id' => $menu->id],
+            [
+                'prep_time' => $request->prep_time,
+                'cook_time' => $request->cook_time,
+                'instructions' => $request->instructions,
+                'cost_price' => $request->cost_price,
+            ]
+        );
 
-        $recipe = $menu->recipe()->create([
-            'ingredients' => $request->ingredients,
-            'instructions' => $request->instructions,
-            'cost_price' => $request->cost_price,
-        ]);
+        $syncData = [];
+        foreach ($request->ingredients as $ingredient) {
+            $syncData[$ingredient['id']] = ['quantity' => $ingredient['quantity']];
+        }
+        
+        $recipe->ingredients()->sync($syncData);
 
-        return response()->json([
-            'message' => 'Resep internal berhasil disimpan',
-            'data' => $recipe
-        ], 201);
+        return $this->successResponse(
+            $recipe->load('ingredients'), 
+            'Resep internal dan komposisi bahan berhasil disimpan.', 
+            201
+        );
     }
 
     /**
      * ADMIN ONLY: Melihat daftar menu beserta resep rahasia dan modalnya.
      */
-   public function getInternalRecipes()
+    public function getInternalRecipes()
     {
-        $menus = Menu::with('recipe')->orderBy('created_at', 'desc')->get();
-        return response()->json($menus);
+        $menus = Menu::with(['category', 'recipe.ingredients'])->orderBy('created_at', 'desc')->get();
+        return $this->successResponse($menus, 'Data resep internal berhasil diambil.');
+    }
+
+    
+    public function update(StoreMenuRequest $request, $id)
+    {
+        $menu = Menu::findOrFail($id);
+        
+        $menu->update([
+            'category_id' => $request->category_id,
+            'name' => $request->name,
+            'price' => $request->price,
+            'description' => $request->description,
+            'image_url' => $request->image_url,
+            'is_available' => $request->is_available ?? $menu->is_available,
+        ]);
+
+        return $this->successResponse($menu, 'Menu berhasil diperbarui.');
+    }
+
+    public function destroy($id)
+    {
+        $menu = Menu::findOrFail($id);
+        $menu->delete();
+
+        return $this->successResponse(null, 'Menu berhasil dihapus.');
     }
 }
+

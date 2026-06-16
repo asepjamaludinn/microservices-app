@@ -10,11 +10,18 @@ class Recipe extends Model
     use HasFactory;
 
     protected $fillable = [
-        'menu_id', 'ingredients', 'instructions', 'cost_price'
+        'menu_id', 'prep_time', 'cook_time', 'instructions', 'cost_price'
     ];
 
     public function menu()
     {
         return $this->belongsTo(Menu::class);
+    }
+
+    public function ingredients()
+    {
+        return $this->belongsToMany(Ingredient::class, 'recipe_ingredients')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
     }
 }

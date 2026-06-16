@@ -9,11 +9,35 @@ import {
   Star,
   Search,
   SlidersHorizontal,
+  X,
+  Clock,
+  Flame,
+  Receipt,
+  ChefHat,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// 1. Definisikan ulang Tipe Data agar mencakup Resep & Ingredients
+type Ingredient = {
+  id: number;
+  name: string;
+  unit: string;
+  pivot: {
+    quantity: string | number;
+  };
+};
+
+type Recipe = {
+  id: number;
+  prep_time: number;
+  cook_time: number;
+  instructions: string;
+  cost_price: string | number;
+  ingredients: Ingredient[];
+};
 
 type Menu = {
   id: number;
@@ -25,11 +49,16 @@ type Menu = {
   category?: {
     name: string;
   };
+  recipe?: Recipe;
 };
 
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 2. State untuk mengontrol Modal
+  const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchMenus = async () => {
@@ -37,7 +66,7 @@ export default function MenusPage() {
         const res = await fetch("/api/menus/internal");
         const data = await res.json();
         if (res.ok) {
-          setMenus(data);
+          setMenus(data.data || []);
         }
       } finally {
         setLoading(false);
@@ -45,6 +74,17 @@ export default function MenusPage() {
     };
     fetchMenus();
   }, []);
+
+  // Fungsi untuk membuka dan menutup Modal
+  const openModal = (menu: Menu) => {
+    setSelectedMenu(menu);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedMenu(null), 200); // Jeda agar animasi smooth
+  };
 
   if (loading) {
     return (
@@ -55,7 +95,7 @@ export default function MenusPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       {/* Header */}
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
@@ -74,7 +114,7 @@ export default function MenusPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_1fr]">
-        {/* Filter Sidebar */}
+        {/* Filter Sidebar (Sama seperti sebelumnya) */}
         <aside className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="font-bold text-slate-900">Filter</h3>
@@ -158,7 +198,11 @@ export default function MenusPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {menus.map((menu) => (
-                <div key={menu.id} className="group cursor-pointer">
+                <div
+                  key={menu.id}
+                  className="group cursor-pointer"
+                  onClick={() => openModal(menu)} // Buka modal saat kartu diklik
+                >
                   <div className="relative h-44 overflow-hidden rounded-2xl bg-slate-100">
                     {menu.image_url ? (
                       <img
@@ -172,15 +216,19 @@ export default function MenusPage() {
                       </div>
                     )}
 
-                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-primary">
+                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-primary shadow-sm backdrop-blur-sm">
                       Manageable
                     </div>
 
-                    <div className="absolute right-3 top-3 flex gap-2">
+                    <div className="absolute right-3 top-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         size="icon"
                         variant="secondary"
                         className="h-8 w-8 text-blue-600 hover:bg-blue-50 shadow-sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Mencegah klik menyebar ke kartu
+                          openModal(menu);
+                        }}
                       >
                         <Edit2 size={14} />
                       </Button>
@@ -188,6 +236,7 @@ export default function MenusPage() {
                         size="icon"
                         variant="secondary"
                         className="h-8 w-8 text-red-600 hover:bg-red-50 shadow-sm"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -199,7 +248,7 @@ export default function MenusPage() {
                       {menu.name}
                     </h3>
                     <p className="mt-0.5 text-xs font-semibold text-primary">
-                      {menu.category?.name || "Main Course"}
+                      {menu.category?.name || "Kategori"}
                     </p>
 
                     <div className="mt-2 flex items-center justify-between">
@@ -210,7 +259,7 @@ export default function MenusPage() {
                         </span>
                       </div>
 
-                      <p className="font-bold text-primary">
+                      <p className="font-bold text-slate-900">
                         Rp {Number(menu.price).toLocaleString("id-ID")}
                       </p>
                     </div>
@@ -221,6 +270,155 @@ export default function MenusPage() {
           )}
         </main>
       </div>
+
+      {/* MODAL POP-UP RAHASIA DAPUR */}
+      {isModalOpen && selectedMenu && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <ChefHat size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-lg tracking-tight">
+                    Rahasia Dapur (Internal)
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {selectedMenu.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {selectedMenu.recipe ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Kolom Kiri: Stats & Bahan */}
+                  <div className="space-y-6">
+                    {/* Stats Box */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+                        <Clock className="text-orange-500 mb-2" size={20} />
+                        <p className="text-xs text-orange-600/80 font-semibold mb-0.5">
+                          Waktu Persiapan
+                        </p>
+                        <p className="font-bold text-orange-700">
+                          {selectedMenu.recipe.prep_time} Menit
+                        </p>
+                      </div>
+                      <div className="bg-red-50 rounded-2xl p-4 border border-red-100">
+                        <Flame className="text-red-500 mb-2" size={20} />
+                        <p className="text-xs text-red-600/80 font-semibold mb-0.5">
+                          Waktu Memasak
+                        </p>
+                        <p className="font-bold text-red-700">
+                          {selectedMenu.recipe.cook_time} Menit
+                        </p>
+                      </div>
+                      <div className="col-span-2 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-emerald-600/80 font-semibold mb-0.5 flex items-center gap-1">
+                            <Receipt size={14} /> Modal / HPP
+                          </p>
+                          <p className="font-bold text-emerald-700 text-lg">
+                            Rp{" "}
+                            {Number(
+                              selectedMenu.recipe.cost_price,
+                            ).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-emerald-600/80 font-semibold mb-0.5">
+                            Harga Jual
+                          </p>
+                          <p className="font-bold text-slate-700">
+                            Rp{" "}
+                            {Number(selectedMenu.price).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ingredients List */}
+                    <div>
+                      <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                        Komposisi Bahan
+                      </h4>
+                      <ul className="space-y-2">
+                        {selectedMenu.recipe.ingredients?.map((ing) => (
+                          <li
+                            key={ing.id}
+                            className="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm"
+                          >
+                            <span className="font-medium text-slate-700">
+                              {ing.name}
+                            </span>
+                            <span className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md text-xs">
+                              {Number(ing.pivot.quantity)} {ing.unit}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Kolom Kanan: Instruksi Memasak */}
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-3">
+                      Langkah Memasak (SOP)
+                    </h4>
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                      {selectedMenu.recipe.instructions}
+                    </div>
+
+                    <div className="mt-6">
+                      <h4 className="font-bold text-slate-900 mb-3">
+                        Deskripsi Menu Publik
+                      </h4>
+                      <p className="text-sm text-slate-500 italic">
+                        "{selectedMenu.description}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <ChefHat size={48} className="mb-4 opacity-50" />
+                  <p className="font-medium text-slate-600">
+                    Belum ada resep internal untuk menu ini.
+                  </p>
+                  <Button className="mt-4 bg-primary hover:bg-primary-hover text-white rounded-xl">
+                    <Plus size={16} className="mr-2" /> Buat Resep Baru
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={closeModal}
+                className="rounded-xl font-semibold border-slate-200"
+              >
+                Tutup
+              </Button>
+              <Button className="bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold">
+                <Edit2 size={16} className="mr-2" /> Edit Resep
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

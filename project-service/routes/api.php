@@ -11,6 +11,8 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     
     // CRUD Katalog Menu
     Route::post('menus', [MenuController::class, 'storeMenu']);
+    Route::put('menus/{id}', [MenuController::class, 'update']); 
+    Route::delete('menus/{id}', [MenuController::class, 'destroy']);
     
     // CRUD Resep Internal & HPP
     Route::post('menus/{id}/recipes', [MenuController::class, 'storeRecipe']);
