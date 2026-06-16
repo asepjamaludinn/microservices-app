@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -19,23 +20,64 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [isMounted, setIsMounted] = useState(false);
+  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user) {
+            setUser(data.user);
+          }
+        }
+      } catch (error) {
+        console.error("Terjadi kesalahan saat memuat data pengguna:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Orders", href: "/dashboard/orders", icon: ClipboardList },
-    { name: "Tables", href: "/dashboard/tables", icon: UtensilsCrossed },
-    { name: "Kitchen", href: "/dashboard/kitchen", icon: ChefHat },
+    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Orders", href: "/admin/dashboard/orders", icon: ClipboardList },
+    { name: "Tables", href: "/admin/dashboard/tables", icon: UtensilsCrossed },
+    { name: "Kitchen", href: "/admin/dashboard/kitchen", icon: ChefHat },
     { name: "Menus", href: "/admin/dashboard/menus", icon: BookOpen },
-    { name: "Analytics", href: "/dashboard/analytics", icon: LineChart },
+    { name: "Analytics", href: "/admin/dashboard/analytics", icon: LineChart },
   ];
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+      router.push("/admin/login");
     } catch (error) {
       console.error("Gagal logout:", error);
     }
   };
+
+  const getInitials = (name: string) => {
+    if (!name) return "AD";
+    const words = name.trim().split(" ");
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  if (!isMounted) {
+    return (
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full flex-shrink-0 opacity-0 transition-opacity duration-300">
+        <div className="p-6">Memuat...</div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full flex-shrink-0">
@@ -46,6 +88,7 @@ export default function Sidebar() {
               src="/images/logo.png"
               alt="BiteBox Logo"
               fill
+              sizes="160px"
               className="object-contain object-left"
               priority
             />
@@ -69,8 +112,10 @@ export default function Sidebar() {
         <nav className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/admin/dashboard"
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
 
             return (
               <Link
@@ -106,17 +151,16 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-slate-100">
         <div className="flex items-center gap-3 p-2 rounded-xl transition-colors">
-          <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Juna"
-            alt="Profile"
-            className="w-10 h-10 rounded-full bg-slate-100 ring-2 ring-white shadow-sm"
-          />
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#c94430]/10 text-[#c94430] ring-2 ring-white shadow-sm font-bold tracking-tight text-sm">
+            {user ? getInitials(user.name) : "..."}
+          </div>
+
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 truncate tracking-tight">
-              Chef Juna
+              {user ? user.name : "Memuat..."}
             </p>
-            <p className="text-sm text-slate-500 truncate tracking-tight">
-              Admin
+            <p className="text-sm text-slate-500 truncate tracking-tight capitalize">
+              {user ? user.role : "..."}
             </p>
           </div>
           <button

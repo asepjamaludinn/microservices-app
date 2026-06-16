@@ -26,20 +26,17 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // PERBAIKAN 1: Ambil 'data.error' karena route.ts mengirim { error: ... }
         setError(data.error || "Akses ditolak. Periksa kredensial Anda.");
         setLoading(false);
         return;
       }
 
-      // PERBAIKAN 2: Langsung ke data.user.role, tidak perlu data.data.user.role
       if (data.user.role !== "admin") {
         setError("Anda tidak memiliki otoritas sebagai Administrator.");
         setLoading(false);
         return;
       }
 
-      // Login sukses
       router.push("/admin/dashboard");
     } catch (err) {
       setError("Terjadi kesalahan sistem pada aplikasi frontend.");
@@ -53,8 +50,8 @@ export default function AdminLoginPage() {
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#c94430] rounded-full blur-[120px] opacity-20"></div>
 
       <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md relative z-10">
-        <div className="flex flex-col items-center mb-8">
-          <div className="relative w-48 h-16 mb-2">
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative w-64 h-24 mb-1">
             <Image
               src="/images/logo.png"
               alt="BiteBox Logo"
@@ -63,9 +60,9 @@ export default function AdminLoginPage() {
               priority
             />
           </div>
-          <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase border border-slate-200">
-            Secure Admin Portal
-          </span>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tighter">
+            Admin Portal
+          </h1>
         </div>
 
         {error && (
@@ -74,17 +71,17 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1 tracking-tight">
               Email Administrator
             </label>
             <input
               type="email"
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#c94430]/20 focus:border-[#c94430] outline-none transition-all tracking-tight"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#c94430]/20 focus:border-[#c94430] outline-none transition-all tracking-tight"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@bitebox.com"
+              placeholder="masukkan email"
               required
             />
           </div>
@@ -94,7 +91,7 @@ export default function AdminLoginPage() {
             </label>
             <input
               type="password"
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#c94430]/20 focus:border-[#c94430] outline-none transition-all tracking-tight"
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#c94430]/20 focus:border-[#c94430] outline-none transition-all tracking-tight"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -105,14 +102,14 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#c94430] hover:bg-[#b03a28] text-white font-semibold py-3 rounded-xl transition-colors tracking-tight disabled:opacity-70 mt-2 shadow-sm shadow-[#c94430]/20"
+            className="w-full bg-[#c94430] hover:bg-[#b03a28] text-white font-medium py-2.5 rounded-xl transition-colors tracking-tight disabled:opacity-70 mt-4 shadow-sm shadow-[#c94430]/20"
           >
             {loading ? "Otentikasi..." : "Masuk ke Dashboard"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-400 mt-6 tracking-tight">
-          BiteBox Internal System v1.0 <br /> Hanya untuk staf berwenang.
+        <p className="text-center text-sm text-slate-500 tracking-tight mt-6">
+          BiteBox Internal System <br /> Hanya untuk staf berwenang.
         </p>
       </div>
     </div>

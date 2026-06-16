@@ -1,6 +1,26 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Search, Bell } from "lucide-react";
 
 export default function Header() {
+  const [user, setUser] = useState<{ name: string } | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          setUser(data.user);
+        }
+      } catch (error) {}
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <header className="bg-white border-b border-slate-100 px-8 py-5 flex justify-between items-center sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm">
       <div>
@@ -8,7 +28,7 @@ export default function Header() {
           Dashboard
         </h1>
         <p className="text-sm text-slate-500 tracking-tight mt-0.5">
-          Welcome back, Chef!
+          Welcome back, {user ? user.name : "Chef"}!
         </p>
       </div>
       <div className="flex items-center gap-5">
