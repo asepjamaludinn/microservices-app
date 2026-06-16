@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const authUrl = process.env.AUTH_SERVICE_URL || "http://127.0.0.1:8001";
 
     const backendResponse = await fetch(`${authUrl}/api/login`, {
@@ -13,16 +12,16 @@ export async function POST(request: Request) {
       body: JSON.stringify(body),
     });
 
-    const data = await backendResponse.json();
+    const responseData = await backendResponse.json();
 
     if (!backendResponse.ok) {
       return NextResponse.json(
-        { error: data.error || "Login gagal" },
+        { error: responseData.message || "Login gagal" },
         { status: backendResponse.status },
       );
     }
 
-    const token = data.access_token;
+    const token = responseData.data.access_token;
 
     const cookieStore = await cookies();
     cookieStore.set({
@@ -31,14 +30,14 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: data.expires_in,
+      maxAge: responseData.data.expires_in,
       path: "/",
     });
 
     return NextResponse.json(
       {
         message: "Login berhasil",
-        user: data.user,
+        user: responseData.data.user,
       },
       { status: 200 },
     );

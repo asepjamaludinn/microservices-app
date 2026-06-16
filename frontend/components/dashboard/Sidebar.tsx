@@ -24,7 +24,7 @@ export default function Sidebar() {
     { name: "Orders", href: "/dashboard/orders", icon: ClipboardList },
     { name: "Tables", href: "/dashboard/tables", icon: UtensilsCrossed },
     { name: "Kitchen", href: "/dashboard/kitchen", icon: ChefHat },
-    { name: "Menus", href: "/dashboard/menus", icon: BookOpen },
+    { name: "Menus", href: "/admin/dashboard/menus", icon: BookOpen },
     { name: "Analytics", href: "/dashboard/analytics", icon: LineChart },
   ];
 
@@ -69,7 +69,7 @@ export default function Sidebar() {
         <nav className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            // Cek apakah URL saat ini sama dengan href menu
+
             const isActive = pathname === item.href;
 
             return (
