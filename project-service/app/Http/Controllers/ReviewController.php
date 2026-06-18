@@ -2,44 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Review;
-use App\Models\Order;
 use App\Http\Requests\StoreReviewRequest;
 use Illuminate\Http\Request;
+use App\Services\ReviewService;
 
 class ReviewController extends Controller
 {
-    public function index()
+    protected $reviewService;
+
+    public function __construct(ReviewService $reviewService)
     {
-        $reviews = Review::latest()->paginate(10);
+        $this->reviewService = $reviewService;
+    }
+
+    public function index(Request $request)
+    {
+        $reviews = $this->reviewService->getAllReviews($request->query('per_page', 10));
         return $this->successResponse($reviews, 'Daftar ulasan berhasil diambil.');
     }
 
     public function store(StoreReviewRequest $request)
     {
-        $authUserId = $request->attributes->get('auth_user_id');
-
-        $order = Order::find($request->order_id);
-
-        if (!$order) {
-            return $this->errorResponse('Pesanan tidak ditemukan.', 404);
+        try {
+            $authUserId = $request->attributes->get('auth_user_id');
+            $review = $this->reviewService->createReview($request->validated(), $authUserId);
+            return $this->successResponse($review, 'Terima kasih atas ulasan Anda!', 201);
+        } catch (\Exception $e) {
+            $code = $e->getCode() ?: 400;
+            $code = ($code >= 400 && $code <= 500) ? $code : 400;
+            return $this->errorResponse($e->getMessage(), $code);
         }
-
-        if ((string) $order->user_id !== (string) $authUserId) {
-            return $this->errorResponse('Anda tidak diizinkan mengulas pesanan orang lain.', 403);
-        }
-
-        if ($order->status !== 'completed') {
-            return $this->errorResponse('Anda hanya dapat mengulas pesanan yang sudah selesai.', 400);
-        }
-
-        if (Review::where('order_id', $order->id)->exists()) {
-            return $this->errorResponse('Anda sudah memberikan ulasan untuk pesanan ini.', 400);
-        }
-
-        $reviewData = $request->all();
-        $review = Review::create($reviewData);
-
-        return $this->successResponse($review, 'Terima kasih atas ulasan Anda!', 201);
     }
 }

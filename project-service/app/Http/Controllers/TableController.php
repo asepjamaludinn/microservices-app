@@ -2,20 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Table;
 use Illuminate\Http\Request;
+use App\Services\TableService;
 
 class TableController extends Controller
 {
+    protected $tableService;
+
+    public function __construct(TableService $tableService)
+    {
+        $this->tableService = $tableService;
+    }
+
     public function index()
     {
-        $tables = Table::orderBy('area')->orderBy('table_number')->get();
+        $tables = $this->tableService->getAllTables();
         return $this->successResponse($tables, 'Data meja berhasil diambil.');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'table_number' => 'required|string|unique:tables',
             'name' => 'nullable|string',
             'area' => 'required|string',
@@ -23,20 +30,17 @@ class TableController extends Controller
             'status' => 'required|in:available,in_use,reserved,maintenance',
         ]);
 
-        $table = Table::create($request->all());
+        $table = $this->tableService->createTable($validated);
         return $this->successResponse($table, 'Meja baru berhasil ditambahkan.', 201);
     }
 
     public function updateStatus(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'status' => 'required|in:available,in_use,reserved,maintenance',
         ]);
 
-        $table = Table::findOrFail($id);
-        $table->status = $request->status;
-        $table->save();
-
+        $table = $this->tableService->updateTableStatus($id, $validated['status']);
         return $this->successResponse($table, "Status meja {$table->table_number} berhasil diubah.");
     }
 }

@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use App\Services\AuditLogService;
 
 class AuditLogController extends Controller
 {
+    protected $auditLogService;
+
+    public function __construct(AuditLogService $auditLogService)
+    {
+        $this->auditLogService = $auditLogService;
+    }
+
     public function index(Request $request)
     {
-        $query = AuditLog::orderBy('created_at', 'desc');
-
-        if ($request->has('entity_type')) {
-            $query->where('entity_type', $request->entity_type);
-        }
-
-        $logs = $query->paginate(20);
+        $logs = $this->auditLogService->getLogs(
+            $request->query('entity_type'), 
+            $request->query('per_page', 20)
+        );
         
         return $this->successResponse($logs, 'Data riwayat audit berhasil diambil.');
     }
