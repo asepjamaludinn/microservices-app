@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Services\CategoryService;
+use App\Http\Resources\CategoryResource;
 
 class CategoryController extends Controller
 {
@@ -19,22 +20,18 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request)
     {
         $category = $this->categoryService->createCategory($request->validated());
-        return $this->successResponse($category, 'Kategori berhasil ditambahkan.', 201);
+        return $this->successResponse(new CategoryResource($category), 'Kategori berhasil ditambahkan.', 201);
     }
 
     public function update(UpdateCategoryRequest $request, $id)
     {
         $category = $this->categoryService->updateCategory($id, $request->validated());
-        return $this->successResponse($category, 'Kategori berhasil diperbarui.');
+        return $this->successResponse(new CategoryResource($category), 'Kategori berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        try {
-            $this->categoryService->deleteCategory($id);
-            return $this->successResponse(null, 'Kategori berhasil dihapus.');
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        $this->categoryService->deleteCategory($id);
+        return $this->successResponse(null, 'Kategori berhasil dihapus.');
     }
 }

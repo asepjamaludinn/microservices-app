@@ -2,36 +2,39 @@
 
 namespace App\Services;
 
-use App\Models\Review;
-use App\Models\Order;
+use App\Repositories\ReviewRepository;
+use App\Repositories\OrderRepository;
+use Illuminate\Support\Facades\Gate;
 
 class ReviewService
 {
+    protected $reviewRepo;
+    protected $orderRepo;
+
+    public function __construct(ReviewRepository $reviewRepo, OrderRepository $orderRepo)
+    {
+        $this->reviewRepo = $reviewRepo;
+        $this->orderRepo = $orderRepo;
+    }
+
     public function getAllReviews($perPage = 10)
     {
-        return Review::latest()->paginate($perPage);
+        return $this->reviewRepo->getPaginatedReviews($perPage);
     }
 
     public function createReview(array $data, $authUserId)
     {
-        $order = Order::find($data['order_id']);
+        $order = $this->orderRepo->findById($data['order_id']);
 
-        if (!$order) {
-            throw new \Exception('Pesanan tidak ditemukan.', 404);
-        }
-
-        if ((string) $order->user_id !== (string) $authUserId) {
-            throw new \Exception('Anda tidak diizinkan mengulas pesanan orang lain.', 403);
-        }
+        Gate::authorize('review', $order);
 
         if ($order->status !== 'completed') {
             throw new \Exception('Anda hanya dapat mengulas pesanan yang sudah selesai.', 400);
         }
-
-        if (Review::where('order_id', $order->id)->exists()) {
+        if ($this->reviewRepo->existsForOrder($order->id)) {
             throw new \Exception('Anda sudah memberikan ulasan untuk pesanan ini.', 400);
         }
 
-        return Review::create($data);
+        return $this->reviewRepo->create($data);
     }
 }

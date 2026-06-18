@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateStockRequest;
 use App\Http\Requests\StoreIngredientRequest;
 use App\Http\Requests\UpdateIngredientRequest;
 use App\Services\InventoryService;
+use App\Http\Resources\IngredientResource;
 
 class InventoryController extends Controller
 {
@@ -19,46 +20,39 @@ class InventoryController extends Controller
 
     public function index()
     {
-        $ingredients = $this->inventoryService->getInventory();
-        return $this->successResponse($ingredients, 'Data inventaris berhasil diambil.');
+        $ingredients = $this->inventoryService->getInventory(); 
+        return $this->successResponse(IngredientResource::collection($ingredients), 'Data inventaris berhasil diambil.');
     }
 
     public function updateStock(UpdateStockRequest $request, $id)
     {
-        try {
-            $authUserId = $request->attributes->get('auth_user_id');
-            $ingredient = $this->inventoryService->updateStock(
-                $id, 
-                $request->type, 
-                $request->amount, 
-                $request->reason, 
-                $authUserId
-            );
-            return $this->successResponse($ingredient, "Stok {$ingredient->name} berhasil diperbarui.");
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        $authUserId = $request->attributes->get('auth_user_id');
+        $ingredient = $this->inventoryService->updateStock(
+            $id, 
+            $request->type, 
+            $request->amount, 
+            $request->reason, 
+            $authUserId
+        );
+
+        return $this->successResponse(new IngredientResource($ingredient), "Stok {$ingredient->name} berhasil diperbarui.");
     }
 
     public function store(StoreIngredientRequest $request)
     {
         $ingredient = $this->inventoryService->createIngredient($request->validated());
-        return $this->successResponse($ingredient, 'Bahan baku berhasil ditambahkan.', 201);
+        return $this->successResponse(new IngredientResource($ingredient), 'Bahan baku berhasil ditambahkan.', 201);
     }
 
     public function update(UpdateIngredientRequest $request, $id)
     {
         $ingredient = $this->inventoryService->updateIngredient($id, $request->validated());
-        return $this->successResponse($ingredient, 'Bahan baku berhasil diperbarui.');
+        return $this->successResponse(new IngredientResource($ingredient), 'Bahan baku berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        try {
-            $this->inventoryService->deleteIngredient($id);
-            return $this->successResponse(null, 'Bahan baku berhasil dihapus.');
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        $this->inventoryService->deleteIngredient($id);
+        return $this->successResponse(null, 'Bahan baku berhasil dihapus.');
     }
 }

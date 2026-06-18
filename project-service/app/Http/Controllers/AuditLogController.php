@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\AuditLogService;
+use App\Http\Resources\AuditLogResource;
 
 class AuditLogController extends Controller
 {
@@ -21,6 +22,6 @@ class AuditLogController extends Controller
             $request->query('per_page', 20)
         );
         
-        return $this->successResponse($logs, 'Data riwayat audit berhasil diambil.');
+        return $this->successResponse(AuditLogResource::collection($logs)->response()->getData(true), 'Data riwayat audit berhasil diambil.');
     }
 }

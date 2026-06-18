@@ -2,30 +2,36 @@
 
 namespace App\Services;
 
-use App\Models\Category;
+use App\Repositories\CategoryRepository;
 
 class CategoryService
 {
+    protected $categoryRepo;
+
+    public function __construct(CategoryRepository $categoryRepo)
+    {
+        $this->categoryRepo = $categoryRepo;
+    }
+
     public function createCategory(array $data)
     {
-        return Category::create($data);
+        return $this->categoryRepo->create($data);
     }
 
     public function updateCategory($id, array $data)
     {
-        $category = Category::findOrFail($id);
-        $category->update($data);
-        return $category;
+        $category = $this->categoryRepo->findById($id);
+        return $this->categoryRepo->update($category, $data);
     }
 
     public function deleteCategory($id)
     {
-        $category = Category::findOrFail($id);
+        $category = $this->categoryRepo->findById($id);
         
         if ($category->menus()->exists()) {
             throw new \Exception('Kategori tidak dapat dihapus karena masih digunakan oleh beberapa menu.', 400);
         }
 
-        $category->delete();
+        $this->categoryRepo->delete($category);
     }
 }

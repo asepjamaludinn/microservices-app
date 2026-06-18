@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTableRequest;
+use App\Http\Requests\UpdateTableStatusRequest;
 use App\Services\TableService;
+use App\Http\Resources\TableResource; 
 
 class TableController extends Controller
 {
@@ -17,30 +19,20 @@ class TableController extends Controller
     public function index()
     {
         $tables = $this->tableService->getAllTables();
-        return $this->successResponse($tables, 'Data meja berhasil diambil.');
+        return $this->successResponse(TableResource::collection($tables), 'Data meja berhasil diambil.');
     }
 
-    public function store(Request $request)
+    public function store(StoreTableRequest $request)
     {
-        $validated = $request->validate([
-            'table_number' => 'required|string|unique:tables',
-            'name' => 'nullable|string',
-            'area' => 'required|string',
-            'capacity' => 'required|integer|min:1',
-            'status' => 'required|in:available,in_use,reserved,maintenance',
-        ]);
-
-        $table = $this->tableService->createTable($validated);
-        return $this->successResponse($table, 'Meja baru berhasil ditambahkan.', 201);
+        $table = $this->tableService->createTable($request->validated());
+        return $this->successResponse(new TableResource($table), 'Meja baru berhasil ditambahkan.', 201);
     }
 
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(UpdateTableStatusRequest $request, $id)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:available,in_use,reserved,maintenance',
-        ]);
-
+        $validated = $request->validated();
+        
         $table = $this->tableService->updateTableStatus($id, $validated['status']);
-        return $this->successResponse($table, "Status meja {$table->table_number} berhasil diubah.");
+        return $this->successResponse(new TableResource($table), "Status meja {$table->table_number} berhasil diubah.");
     }
 }

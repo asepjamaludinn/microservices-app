@@ -2,84 +2,55 @@
 
 namespace App\Services;
 
-use App\Models\Menu;
-use App\Models\Category;
-use App\Models\Recipe;
-use App\Models\Ingredient;
+use App\Repositories\MenuRepository;
+use App\Repositories\CategoryRepository; 
+use App\Repositories\InventoryRepository;
 
 class MenuService
 {
-    public function getMenus(array $filters)
+    protected $menuRepo;
+    protected $categoryRepo;
+    protected $inventoryRepo;
+
+    public function __construct(MenuRepository $menuRepo, CategoryRepository $categoryRepo, InventoryRepository $inventoryRepo)
     {
-        $query = Menu::with('category')->where('is_available', true);
-
-        if (!empty($filters['search'])) {
-            $query->where('name', 'ilike', '%' . $filters['search'] . '%');
-        }
-
-        if (!empty($filters['category'])) {
-            $query->whereHas('category', function ($q) use ($filters) {
-                $q->where('slug', $filters['category']);
-            });
-        }
-
-        $allowedSorts = ['price', 'rating', 'created_at', 'name'];
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortOrder = $filters['sort_order'] ?? 'desc';
-
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortOrder === 'asc' ? 'asc' : 'desc');
-        }
-
-        return $query->paginate(12);
+        $this->menuRepo = $menuRepo;
+        $this->categoryRepo = $categoryRepo;
+        $this->inventoryRepo = $inventoryRepo;
     }
 
-    public function getCategories()
-    {
-        return Category::orderBy('name', 'asc')->get();
-    }
+    public function getMenus(array $filters) { return $this->menuRepo->getPaginatedMenus($filters); }
+    public function getCategories() { return $this->categoryRepo->getAll(); }
 
     public function createMenu(array $data, $userId)
     {
         $data['user_id'] = $userId;
         $data['is_available'] = $data['is_available'] ?? true;
         $data['rating'] = 0;
-        return Menu::create($data);
+        return $this->menuRepo->create($data);
     }
 
     public function updateMenu($id, array $data)
     {
-        $menu = Menu::findOrFail($id);
-        $menu->update($data);
-        return $menu->fresh('category');
+        $menu = $this->menuRepo->findById($id);
+        return $this->menuRepo->update($menu, $data)->load('category');
     }
 
     public function toggleAvailability($id)
     {
-        $menu = Menu::findOrFail($id);
-        $menu->is_available = !$menu->is_available;
-        $menu->save();
-        return $menu;
+        $menu = $this->menuRepo->findById($id);
+        return $this->menuRepo->update($menu, ['is_available' => !$menu->is_available]);
     }
 
     public function deleteMenu($id)
     {
-        $menu = Menu::findOrFail($id);
-        $menu->delete();
+        $menu = $this->menuRepo->findById($id);
+        $this->menuRepo->delete($menu);
     }
 
     public function createOrUpdateRecipe($menuId, array $data)
     {
-        $menu = Menu::findOrFail($menuId);
-        $recipe = Recipe::updateOrCreate(
-            ['menu_id' => $menu->id],
-            [
-                'prep_time' => $data['prep_time'],
-                'cook_time' => $data['cook_time'],
-                'instructions' => $data['instructions'],
-                'cost_price' => $data['cost_price'],
-            ]
-        );
+        $recipe = $this->menuRepo->updateOrCreateRecipe($menuId, $data);
 
         $syncData = [];
         foreach ($data['ingredients'] as $ingredient) {
@@ -90,29 +61,6 @@ class MenuService
         return $recipe->load('ingredients');
     }
 
-    public function getInternalRecipes(array $filters)
-    {
-        $query = Menu::with(['category', 'recipe.ingredients'])->orderBy('created_at', 'desc');
-
-        if (!empty($filters['search'])) {
-            $query->where('name', 'ilike', '%' . $filters['search'] . '%');
-        }
-        
-        if (!empty($filters['category']) && $filters['category'] !== 'All') {
-            $query->whereHas('category', function ($q) use ($filters) {
-                $q->where('name', $filters['category']);
-            });
-        }
-
-        if (!empty($filters['rating'])) {
-            $query->where('rating', '>=', $filters['rating']);
-        }
-
-        return $query->get();
-    }
-
-    public function getIngredients()
-    {
-        return Ingredient::orderBy('name', 'asc')->get();
-    }
+    public function getInternalRecipes(array $filters) { return $this->menuRepo->getInternalRecipes($filters); }
+    public function getIngredients() { return $this->inventoryRepo->getAllSorted(); }
 }

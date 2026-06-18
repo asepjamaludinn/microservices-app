@@ -2,27 +2,40 @@
 
 namespace App\Services;
 
-use App\Models\Ingredient;
-use App\Models\AuditLog;
+use App\Repositories\InventoryRepository;
+use App\Repositories\AuditLogRepository;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
+    protected $inventoryRepo;
+    protected $auditLogRepo;
+    public function __construct(
+        InventoryRepository $inventoryRepo, 
+        AuditLogRepository $auditLogRepo
+    ) {
+        $this->inventoryRepo = $inventoryRepo;
+        $this->auditLogRepo = $auditLogRepo;
+    }
+
     public function getInventory()
     {
-        $ingredients = Ingredient::orderBy('stock', 'asc')->get();
+        $ingredients = $this->inventoryRepo->getAllSorted();
+        
         $ingredients->transform(function ($item) {
             $item->status = $item->stock <= 1000 ? 'Low Stock' : 'Available';
             $item->image_url = null; 
             return $item;
         });
+        
         return $ingredients;
     }
 
     public function updateStock($id, $type, $amount, $reason, $authUserId)
     {
         return DB::transaction(function () use ($id, $type, $amount, $reason, $authUserId) {
-            $ingredient = Ingredient::lockForUpdate()->findOrFail($id);
+            
+            $ingredient = $this->inventoryRepo->findLockedById($id);
             $oldStock = $ingredient->stock;
 
             if ($type === 'in') {
@@ -36,9 +49,9 @@ class InventoryService
                 $action = 'STOCK_REMOVED';
             }
 
-            $ingredient->save();
+            $this->inventoryRepo->update($ingredient, ['stock' => $ingredient->stock]);
 
-            AuditLog::create([
+            $this->auditLogRepo->create([
                 'user_id' => $authUserId,
                 'action' => $action,
                 'entity_type' => 'Ingredient',
@@ -57,24 +70,23 @@ class InventoryService
 
     public function createIngredient(array $data)
     {
-        return Ingredient::create($data);
+        return $this->inventoryRepo->create($data);
     }
 
     public function updateIngredient($id, array $data)
     {
-        $ingredient = Ingredient::findOrFail($id);
-        $ingredient->update($data);
-        return $ingredient;
+        $ingredient = $this->inventoryRepo->findById($id);
+        return $this->inventoryRepo->update($ingredient, $data);
     }
 
     public function deleteIngredient($id)
     {
-        $ingredient = Ingredient::findOrFail($id);
+        $ingredient = $this->inventoryRepo->findById($id);
         
         if ($ingredient->recipes()->exists()) {
             throw new \Exception('Bahan baku tidak dapat dihapus karena masih digunakan dalam resep.', 400);
         }
 
-        $ingredient->delete();
+        $this->inventoryRepo->delete($ingredient);
     }
 }

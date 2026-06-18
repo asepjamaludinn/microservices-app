@@ -7,25 +7,28 @@ use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Auth\GenericUser;
+use Illuminate\Support\Facades\Auth;
 
 class JwtRoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         try {
-
             $payload = JWTAuth::parseToken()->getPayload();
             $userId = $payload->get('sub');
             $userRole = $payload->get('role');
 
-          
             $request->attributes->add([
                 'auth_user_id' => $userId,
                 'auth_user_role' => $userRole
             ]);
+
+            $user = new GenericUser([
+                'id' => $userId,
+                'role' => $userRole,
+            ]);
+            Auth::setUser($user);
 
             if (!empty($roles) && !in_array($userRole, $roles)) {
                 return response()->json([
