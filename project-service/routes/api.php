@@ -47,6 +47,7 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     Route::get('tables', [TableController::class, 'index']);
     Route::post('tables', [TableController::class, 'store']);
     Route::patch('tables/{id}/status', [TableController::class, 'updateStatus']);
+    Route::delete('tables/{id}', [TableController::class, 'destroy']); 
     
     // Manajemen Inventaris 
     Route::get('inventory', [InventoryController::class, 'index']);

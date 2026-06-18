@@ -1,30 +1,30 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
+import { gatewayError, readJsonSafe } from "@/lib/api-response";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("jwt_token")?.value;
+  const token = await getJwtToken();
 
-  if (!token)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) {
+    return gatewayError("Unauthorized", 401);
+  }
 
   try {
-    const projectUrl =
-      process.env.PROJECT_SERVICE_URL || "http://127.0.0.1:8002";
+    const projectUrl = getProjectServiceUrl();
+
     const backendResponse = await fetch(`${projectUrl}/api/analytics`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
+      cache: "no-store",
     });
 
-    const data = await backendResponse.json();
+    const data = await readJsonSafe(backendResponse);
+
     return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Gagal memuat Analytics" },
-      { status: 500 },
-    );
+  } catch {
+    return gatewayError("Gagal memuat analytics");
   }
 }

@@ -16,6 +16,8 @@ export type CartItem = {
 
 interface CartState {
   cart: CartItem[];
+  isCartOpen: boolean;
+  setIsCartOpen: (isOpen: boolean) => void;
   addToCart: (menu: Menu) => void;
   updateQuantity: (id: number, delta: number) => void;
   updateNotes: (id: number, notes: string) => void;
@@ -26,6 +28,9 @@ interface CartState {
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
+  isCartOpen: false,
+
+  setIsCartOpen: (isOpen) => set({ isCartOpen: isOpen }),
 
   addToCart: (menu) => {
     set((state) => {

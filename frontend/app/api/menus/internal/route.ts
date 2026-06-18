@@ -1,42 +1,34 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
+import { gatewayError, readJsonSafe } from "@/lib/api-response";
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("jwt_token")?.value;
+  const token = await getJwtToken();
 
   if (!token) {
-    return NextResponse.json(
-      { error: "Tidak ada akses (Token hilang)" },
-      { status: 401 },
-    );
+    return gatewayError("Unauthorized", 401);
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
-
-    const projectUrl =
-      process.env.PROJECT_SERVICE_URL || "http://127.0.0.1:8002";
+    const projectUrl = getProjectServiceUrl();
 
     const backendResponse = await fetch(
-      `${projectUrl}/api/internal/recipes?${queryString}`,
+      `${projectUrl}/api/internal/recipes?${searchParams.toString()}`,
       {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
+        cache: "no-store",
       },
     );
 
-    const data = await backendResponse.json();
+    const data = await readJsonSafe(backendResponse);
 
     return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Gagal menghubungi Project Service" },
-      { status: 500 },
-    );
+  } catch {
+    return gatewayError("Gagal menghubungi Project Service");
   }
 }

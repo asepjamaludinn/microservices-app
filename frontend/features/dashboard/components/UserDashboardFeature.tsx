@@ -1,0 +1,131 @@
+"use client";
+
+import Image from "next/image";
+import { Clock, LogOut, ReceiptText, Utensils } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useUserDashboard } from "@/hooks/use-user-dashboard";
+import { formatCurrency, formatOrderNumber } from "@/utils/order-formatters";
+
+export default function UserDashboardFeature() {
+  const { user, orders, loading, handleLogout } = useUserDashboard();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-[#c94430] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="relative w-28 h-10">
+            <Image
+              src="/images/logo.png"
+              alt="Logo"
+              fill
+              className="object-contain object-left"
+            />
+          </div>
+
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="text-slate-500 hover:text-red-500 rounded-xl"
+          >
+            <LogOut size={18} className="mr-2" />
+            Logout
+          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="bg-[#c94430] rounded-3xl p-8 text-white shadow-md mb-8 relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
+              Halo, {user?.name}!
+            </h1>
+            <p className="text-white/80">
+              Lapar? Kunjungi kasir untuk memesan hidangan favorit Anda.
+            </p>
+          </div>
+
+          <div className="absolute right-[-5%] top-[-20%] text-white/10">
+            <Utensils size={180} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
+            <ReceiptText className="text-[#c94430]" />
+            Riwayat Pesanan Saya
+          </h2>
+
+          {orders.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              <ReceiptText size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="font-medium">
+                Anda belum memiliki riwayat pesanan.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="border border-slate-100 rounded-2xl p-5 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-50">
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 flex items-center gap-1 mb-1">
+                        <Clock size={12} />
+                        {new Date(order.created_at).toLocaleString("id-ID")}
+                      </p>
+
+                      <h3 className="font-bold text-slate-900 text-lg">
+                        Order {formatOrderNumber(order.id)}
+                      </h3>
+
+                      <p className="text-sm font-semibold text-[#c94430] capitalize mt-0.5">
+                        {order.order_type.replace("_", " ")}
+                        {order.table_number && ` • Meja ${order.table_number}`}
+                      </p>
+                    </div>
+
+                    <div className="text-left sm:text-right">
+                      <p className="font-bold text-lg text-slate-900 mt-2">
+                        {formatCurrency(order.total_amount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {order.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between text-sm"
+                      >
+                        <span className="font-medium text-slate-700">
+                          <span className="font-bold text-slate-900 mr-2">
+                            {item.quantity}x
+                          </span>
+                          {item.menu?.name || "Menu Terhapus"}
+                        </span>
+
+                        <span className="text-slate-500 font-medium">
+                          {formatCurrency(item.subtotal)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

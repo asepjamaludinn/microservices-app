@@ -23,4 +23,14 @@ class TableService
         $table->save();
         return $table;
     }
+    public function deleteTable($id)
+    {
+        $table = Table::findOrFail($id);
+        
+        if (in_array($table->status, ['in_use', 'reserved'])) {
+            throw new \Exception('Meja sedang digunakan atau direservasi, tidak dapat dihapus.', 400);
+        }
+
+        return $table->delete();
+    }
 }

@@ -93,7 +93,8 @@ class OrderService
                 ];
             }
 
-            $taxAmount = $subtotal * 0.11;
+            $taxRate = config('app.tax_rate', 0.11);
+            $taxAmount = $subtotal * $taxRate;
             $totalAmount = $subtotal + $taxAmount;
 
             $order = $this->orderRepo->create([
@@ -141,6 +142,10 @@ class OrderService
             Gate::authorize('update', $order);
 
             $oldStatus = $order->status;
+
+            if (in_array($oldStatus, ['completed', 'cancelled'])) {
+            throw new \Exception("Pesanan yang sudah berstatus '{$oldStatus}' tidak dapat diubah lagi.");
+        }
             
             if (in_array($newStatus, ['completed', 'cancelled'])) {
                 if ($order->table_id && $order->table) {

@@ -1,44 +1,78 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
+import {
+  gatewayError,
+  getErrorMessage,
+  readJsonSafe,
+} from "@/lib/api-response";
 
-export async function POST(request: Request) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("jwt_token")?.value;
+export async function GET(request: Request) {
+  const token = await getJwtToken();
 
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return gatewayError("Unauthorized", 401);
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
-    const projectUrl =
-      process.env.PROJECT_SERVICE_URL || "http://127.0.0.1:8002";
+    const projectUrl = getProjectServiceUrl();
 
     const backendResponse = await fetch(
-      `${projectUrl}/api/orders?${queryString}`,
+      `${projectUrl}/api/orders?${searchParams.toString()}`,
       {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
+        cache: "no-store",
       },
     );
-    const data = await backendResponse.json();
+
+    const data = await readJsonSafe(backendResponse);
+
+    return NextResponse.json(data, { status: backendResponse.status });
+  } catch {
+    return gatewayError("Gagal mengambil data pesanan");
+  }
+}
+
+export async function POST(request: Request) {
+  const token = await getJwtToken();
+
+  if (!token) {
+    return gatewayError("Unauthorized", 401);
+  }
+
+  try {
+    const body = await request.json();
+    const projectUrl = getProjectServiceUrl();
+
+    const backendResponse = await fetch(`${projectUrl}/api/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await readJsonSafe(backendResponse);
 
     if (!backendResponse.ok) {
       return NextResponse.json(
-        { error: data.message || data.error || "Gagal membuat pesanan" },
+        {
+          status: "Error",
+          error: getErrorMessage(data, "Gagal membuat pesanan"),
+          data,
+        },
         { status: backendResponse.status },
       );
     }
 
-    return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Gagal menghubungi Project Service" },
-      { status: 500 },
-    );
+    return NextResponse.json(data, { status: backendResponse.status });
+  } catch {
+    return gatewayError("Gagal menghubungi Project Service");
   }
 }

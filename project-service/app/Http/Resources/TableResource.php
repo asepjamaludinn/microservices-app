@@ -16,6 +16,7 @@ class TableResource extends JsonResource
             'area' => $this->area,
             'capacity' => (int) $this->capacity,
             'status' => $this->status,
+            'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,
         ];
     }
 }

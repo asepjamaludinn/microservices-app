@@ -10,6 +10,7 @@ Route::post('reset-password-direct', [AuthController::class, 'directResetPasswor
 
 Route::group(['middleware' => 'auth:api'], function () {
     Route::get('me', [AuthController::class, 'me']);
+    Route::post('refresh', [AuthController::class, 'refresh']); 
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('update-password', [AuthController::class, 'updatePassword']);
 });

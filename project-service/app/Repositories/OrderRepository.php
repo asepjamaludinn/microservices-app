@@ -13,11 +13,27 @@ class OrderRepository
             $query->where('status', $filters['status']);
         }
 
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('customer_name', 'like', '%' . $search . '%')
+                  ->orWhere('id', 'like', '%' . $search . '%');
+            });
+        }
+
         if (isset($filters['paginate']) && $filters['paginate'] === 'false') {
             return $query->get();
         }
 
         return $query->paginate($filters['per_page'] ?? 15);
+    }
+
+    public function getUserOrders($userId, $perPage = 10)
+    {
+        return Order::with(['items.menu', 'table'])
+                    ->where('user_id', $userId)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate($perPage);
     }
 
     public function findById($id, $with = [])

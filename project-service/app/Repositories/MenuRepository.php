@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Models\Menu;
 use App\Models\Recipe;
+use Illuminate\Support\Facades\DB;
+
 
 class MenuRepository
 {
@@ -53,7 +55,15 @@ class MenuRepository
     public function findById($id, $with = []) { return Menu::with($with)->findOrFail($id); }
     public function create(array $data) { return Menu::create($data); }
     public function update(Menu $menu, array $data) { $menu->update($data); return $menu; }
-    public function delete(Menu $menu) { return $menu->delete(); }
+    public function delete(Menu $menu) 
+    { 
+        return $menu->delete(); 
+    }
+    
+    public function hasOrderHistory($menuId)
+    {
+        return DB::table('order_items')->where('menu_id', $menuId)->exists();
+    }
     
     public function updateOrCreateRecipe($menuId, array $data) {
         return Recipe::updateOrCreate(['menu_id' => $menuId], [

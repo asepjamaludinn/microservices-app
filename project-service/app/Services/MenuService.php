@@ -35,15 +35,19 @@ class MenuService
         $menu = $this->menuRepo->findById($id);
         return $this->menuRepo->update($menu, $data)->load('category');
     }
-
+    
     public function toggleAvailability($id)
     {
         $menu = $this->menuRepo->findById($id);
         return $this->menuRepo->update($menu, ['is_available' => !$menu->is_available]);
     }
 
-    public function deleteMenu($id)
+   public function deleteMenu($id)
     {
+        if ($this->menuRepo->hasOrderHistory($id)) {
+            throw new \Exception("Menu ini tidak dapat dihapus secara permanen karena sudah memiliki riwayat pesanan. Silakan nonaktifkan status ketersediaannya (is_available) agar tidak merusak data laporan.");
+        }
+
         $menu = $this->menuRepo->findById($id);
         $this->menuRepo->delete($menu);
     }

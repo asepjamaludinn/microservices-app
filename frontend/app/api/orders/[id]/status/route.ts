@@ -1,26 +1,28 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
+import {
+  gatewayError,
+  getErrorMessage,
+  readJsonSafe,
+} from "@/lib/api-response";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("jwt_token")?.value;
+  const token = await getJwtToken();
 
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return gatewayError("Unauthorized", 401);
   }
 
   try {
     const body = await request.json();
-    const resolvedParams = await params;
-
-    const projectUrl =
-      process.env.PROJECT_SERVICE_URL || "http://127.0.0.1:8002";
+    const { id } = await params;
+    const projectUrl = getProjectServiceUrl();
 
     const backendResponse = await fetch(
-      `${projectUrl}/api/orders/${resolvedParams.id}/status`,
+      `${projectUrl}/api/orders/${id}/status`,
       {
         method: "PATCH",
         headers: {
@@ -32,13 +34,21 @@ export async function PATCH(
       },
     );
 
-    const data = await backendResponse.json();
+    const data = await readJsonSafe(backendResponse);
+
+    if (!backendResponse.ok) {
+      return NextResponse.json(
+        {
+          status: "Error",
+          error: getErrorMessage(data, "Gagal update status pesanan"),
+          data,
+        },
+        { status: backendResponse.status },
+      );
+    }
 
     return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Gagal menghubungi Project Service" },
-      { status: 500 },
-    );
+  } catch {
+    return gatewayError("Gagal menghubungi Project Service");
   }
 }

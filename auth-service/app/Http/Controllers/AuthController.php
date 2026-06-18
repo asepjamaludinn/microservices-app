@@ -2,89 +2,102 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use App\Services\AuthService;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest; 
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\AuthTokenResource;
+use Exception;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function register(RegisterRequest $request)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => User::ROLE_USER,
-        ]);
+        $user = $this->authService->register($request->validated());
 
-        $userData = [
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role
-        ];
-
-        return $this->successResponse($userData, 'User berhasil didaftarkan.', 201);
+        return $this->successResponse(
+            new UserResource($user), 
+            'User berhasil didaftarkan.', 
+            201
+        );
     }
 
     public function login(LoginRequest $request) 
     {
-        $credentials = $request->only('email', 'password');
+        try {
+            $tokenData = $this->authService->login($request->only('email', 'password'));
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
-            return $this->errorResponse('Kredensial tidak valid (Email/Password salah)', 401);
+            return $this->successResponse(
+                new AuthTokenResource($tokenData), 
+                'Login berhasil'
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 401);
         }
+    }
 
-        return $this->respondWithToken($token);
+    public function refresh()
+    {
+        try {
+            $tokenData = $this->authService->refresh();
+
+            return $this->successResponse(
+                new AuthTokenResource($tokenData), 
+                'Token berhasil diperbarui'
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse('Gagal memperbarui token. Token mungkin sudah tidak valid.', 401);
+        }
     }
 
     public function me()
     {
-        return $this->successResponse(Auth::guard('api')->user(), 'Data user berhasil diambil.');
+        $user = Auth::guard('api')->user();
+
+        return $this->successResponse(
+            new UserResource($user), 
+            'Data user berhasil diambil.'
+        );
     }
 
     public function logout()
     {
-        Auth::guard('api')->logout();
-        return $this->successResponse(null, 'Berhasil logout');
+        $this->authService->logout();
+        
+        return $this->successResponse(null, 'Berhasil logout. Token telah di-invalidasi.');
     }
 
     public function updatePassword(UpdatePasswordRequest $request)
     {
-        $user = Auth::guard('api')->user();
+        try {
+            $user = Auth::guard('api')->user();
+            $this->authService->updatePassword($user, $request->old_password, $request->new_password);
 
-        if (!Hash::check($request->old_password, $user->password)) {
-            return $this->errorResponse('Password lama tidak sesuai', 400);
+            return $this->successResponse(null, 'Password berhasil diperbarui');
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
         }
-
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return $this->successResponse(null, 'Password berhasil diperbarui');
     }
 
     public function directResetPassword(ResetPasswordRequest $request)
     {
-        $user = User::where('email', $request->email)->first();
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru.');
-    }
-
-    protected function respondWithToken($token)
-    {
-        $data = [
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60, 
-            'user' => Auth::guard('api')->user()
-        ];
-
-        return $this->successResponse($data, 'Login berhasil');
+        try {
+            $this->authService->resetPassword($request->email, $request->new_password);
+            
+            return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru.');
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 404);
+        }
     }
 }

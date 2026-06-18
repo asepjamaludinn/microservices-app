@@ -35,4 +35,13 @@ class TableController extends Controller
         $table = $this->tableService->updateTableStatus($id, $validated['status']);
         return $this->successResponse(new TableResource($table), "Status meja {$table->table_number} berhasil diubah.");
     }
+    public function destroy($id)
+    {
+        try {
+            $this->tableService->deleteTable($id);
+            return $this->successResponse(null, 'Meja berhasil dihapus.');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
 }
