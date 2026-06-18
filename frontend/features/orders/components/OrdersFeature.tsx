@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, CheckCircle2, AlertCircle } from "lucide-react";
-
+import { Search } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,6 @@ import { printReceipt } from "@/utils/receipt-printer";
 import { ORDER_TABS } from "@/utils/order-formatters";
 import OrderCard from "./OrderCard";
 import OrderDetailModal from "./OrderDetailModal";
-import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/types/order";
 
 export default function OrdersFeature() {
@@ -33,24 +32,6 @@ export default function OrdersFeature() {
   } = useAdminOrders();
 
   const { selectedOrder, isModalOpen, openModal, closeModal } = useOrderModal();
-
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type }), 3000);
-  };
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -73,12 +54,9 @@ export default function OrdersFeature() {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         try {
           await payBill(orderId);
-          showToast("Pembayaran berhasil diproses!", "success");
+          toast.success("Pembayaran berhasil diproses!");
         } catch (err) {
-          showToast(
-            err instanceof Error ? err.message : "Gagal memproses",
-            "error",
-          );
+          toast.error(err instanceof Error ? err.message : "Gagal memproses");
         }
       },
     });
@@ -93,12 +71,9 @@ export default function OrdersFeature() {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         try {
           await changeOrderStatus(orderId, status);
-          showToast("Status pesanan berhasil diperbarui!", "success");
+          toast.success("Status pesanan berhasil diperbarui!");
         } catch (err) {
-          showToast(
-            err instanceof Error ? err.message : "Gagal memproses",
-            "error",
-          );
+          toast.error(err instanceof Error ? err.message : "Gagal memproses");
         }
       },
     });
@@ -106,22 +81,6 @@ export default function OrdersFeature() {
 
   return (
     <div className="space-y-6 relative">
-      {toast.show && (
-        <div
-          className={cn(
-            "fixed top-6 right-6 z-50 animate-in slide-in-from-top-4 fade-in duration-300 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-white",
-            toast.type === "success" ? "bg-emerald-500" : "bg-red-500",
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 p-6">

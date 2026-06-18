@@ -8,6 +8,8 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\PaymentController;
 
 Route::get('menus', [MenuController::class, 'index']);
 Route::get('categories', [MenuController::class, 'getCategories']);
@@ -48,6 +50,20 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     Route::post('tables', [TableController::class, 'store']);
     Route::patch('tables/{id}/status', [TableController::class, 'updateStatus']);
     Route::delete('tables/{id}', [TableController::class, 'destroy']); 
+
+    Route::get('reservations', [ReservationController::class, 'index']);
+    Route::post('reservations', [ReservationController::class, 'store']);
+    Route::get('reservations/{id}', [ReservationController::class, 'show']);
+    Route::patch('reservations/{id}/confirm', [ReservationController::class, 'confirm']);
+    Route::patch('reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+    Route::patch('reservations/{id}/complete', [ReservationController::class, 'complete']);
+
+    Route::get('payments', [PaymentController::class, 'index']);
+    Route::get('payments/{id}', [PaymentController::class, 'show']);
+    Route::get('orders/{id}/payment', [PaymentController::class, 'showByOrder']);
+    Route::post('orders/{id}/pay', [PaymentController::class, 'store']);
+    Route::post('payments/{id}/refund', [PaymentController::class, 'refund']);
+
     
     // Manajemen Inventaris 
     Route::get('inventory', [InventoryController::class, 'index']);

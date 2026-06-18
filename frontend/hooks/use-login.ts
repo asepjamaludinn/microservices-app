@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { loginUser } from "@/services/auth.service";
 
 type RoleType = "admin" | "user";
 
 export function useLogin(roleType: RoleType = "user") {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,23 +22,21 @@ export function useLogin(roleType: RoleType = "user") {
     try {
       const data = await loginUser({ email, password });
 
-      // Logic untuk Admin
       if (roleType === "admin") {
         if (data.user.role !== "admin") {
           setError("Anda tidak memiliki otoritas sebagai Administrator.");
           return;
         }
+        toast.success(`Selamat datang kembali, Admin ${data.user.name}!`);
         router.push("/admin/dashboard");
-      }
-      // Logic untuk User biasa
-      else {
+      } else {
         if (data.user.role === "admin") {
           setError(
             "Akun ini terdaftar sebagai Administrator. Silakan gunakan Admin Portal.",
           );
           return;
         }
-        alert(`Selamat datang kembali, ${data.user.name}!`);
+        toast.success(`Selamat datang kembali, ${data.user.name}!`);
         router.push("/dashboard");
       }
     } catch (err) {

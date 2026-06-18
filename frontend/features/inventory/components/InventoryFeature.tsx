@@ -6,49 +6,48 @@ import {
   Plus,
   Minus,
   PackageOpen,
-  AlertCircle,
   X,
-  CheckCircle2,
+  Edit2,
+  Trash2,
 } from "lucide-react";
+import toast from "react-hot-toast";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getInventory, updateStock } from "@/services/inventory.service";
+import {
+  getInventory,
+  updateStock,
+  createIngredient,
+  updateIngredient,
+  deleteIngredient,
+} from "@/services/inventory.service";
 import { Ingredient } from "@/types";
-import { cn } from "@/lib/utils";
 
 export default function InventoryFeature() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] =
     useState<Ingredient | null>(null);
-  const [actionType, setActionType] = useState<"in" | "out">("in");
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Custom Toast State
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
+  // Modal State
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [stockActionType, setStockActionType] = useState<"in" | "out">("in");
+  const [stockAmount, setStockAmount] = useState("");
+  const [stockReason, setStockReason] = useState("");
 
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type }), 3000);
-  };
+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
+  const [ingredientFormMode, setIngredientFormMode] = useState<"add" | "edit">(
+    "add",
+  );
+  const [ingredientForm, setIngredientForm] = useState({
+    name: "",
+    unit: "",
+    stock: "",
+  });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchInventory = async () => {
     try {
@@ -66,38 +65,99 @@ export default function InventoryFeature() {
     fetchInventory();
   }, []);
 
-  const openModal = (ingredient: Ingredient, type: "in" | "out") => {
+  const openStockModal = (ingredient: Ingredient, type: "in" | "out") => {
     setSelectedIngredient(ingredient);
-    setActionType(type);
-    setAmount("");
-    setReason("");
-    setIsModalOpen(true);
+    setStockActionType(type);
+    setStockAmount("");
+    setStockReason("");
+    setIsStockModalOpen(true);
   };
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedIngredient || !amount || Number(amount) <= 0) return;
+    if (!selectedIngredient || !stockAmount || Number(stockAmount) <= 0) return;
 
     setIsSubmitting(true);
     try {
       await updateStock(
         selectedIngredient.id,
-        actionType,
-        Number(amount),
-        reason || undefined,
+        stockActionType,
+        Number(stockAmount),
+        stockReason || undefined,
       );
-
-      showToast(
-        `Stok berhasil di${actionType === "in" ? "tambahkan" : "kurangi"}!`,
-        "success",
+      toast.success(
+        `Stok berhasil di${stockActionType === "in" ? "tambahkan" : "kurangi"}!`,
       );
-      setIsModalOpen(false);
+      setIsStockModalOpen(false);
       fetchInventory();
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Terjadi kesalahan",
-        "error",
+      toast.error(error instanceof Error ? error.message : "Terjadi kesalahan");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openIngredientModal = (ingredient?: Ingredient) => {
+    if (ingredient) {
+      setIngredientFormMode("edit");
+      setSelectedIngredient(ingredient);
+      setIngredientForm({
+        name: ingredient.name,
+        unit: ingredient.unit,
+        stock: "",
+      });
+    } else {
+      setIngredientFormMode("add");
+      setSelectedIngredient(null);
+      setIngredientForm({ name: "", unit: "", stock: "" });
+    }
+    setIsIngredientModalOpen(true);
+  };
+
+  const handleIngredientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (ingredientFormMode === "add") {
+        await createIngredient({
+          name: ingredientForm.name,
+          unit: ingredientForm.unit,
+          stock: ingredientForm.stock ? Number(ingredientForm.stock) : 0,
+        });
+        toast.success("Bahan baku baru berhasil ditambahkan!");
+      } else if (selectedIngredient) {
+        await updateIngredient(selectedIngredient.id, {
+          name: ingredientForm.name,
+          unit: ingredientForm.unit,
+        });
+        toast.success("Bahan baku berhasil diperbarui!");
+      }
+      setIsIngredientModalOpen(false);
+      fetchInventory();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal menyimpan data",
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openDeleteModal = (ingredient: Ingredient) => {
+    setSelectedIngredient(ingredient);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedIngredient) return;
+    setIsSubmitting(true);
+    try {
+      await deleteIngredient(selectedIngredient.id);
+      toast.success(`Bahan baku ${selectedIngredient.name} dihapus.`);
+      setIsDeleteModalOpen(false);
+      fetchInventory();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,23 +175,7 @@ export default function InventoryFeature() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
-      {/* TOAST NOTIFICATION */}
-      {toast.show && (
-        <div
-          className={cn(
-            "fixed top-6 right-6 z-50 animate-in slide-in-from-top-4 fade-in duration-300 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-white",
-            toast.type === "success" ? "bg-emerald-500" : "bg-red-500",
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
+      {/* HEADER PAGE */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -141,21 +185,29 @@ export default function InventoryFeature() {
             Lacak dan kelola stok bahan baku restoran.
           </p>
         </div>
-        <div className="relative w-full md:w-64">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <Input
-            placeholder="Cari bahan baku..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-[#c94430]/20"
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <Input
+              placeholder="Cari bahan baku..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-[#c94430]/20"
+            />
+          </div>
+          <Button
+            onClick={() => openIngredientModal()}
+            className="rounded-xl bg-[#c94430] hover:bg-[#b03a28] text-white font-semibold h-10 shrink-0"
+          >
+            <Plus size={16} className="mr-2" /> Tambah Bahan
+          </Button>
         </div>
       </div>
 
-      {/* Render Table atau Skeleton */}
+      {/* TABEL DATA */}
       {loading ? (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6">
           <div className="space-y-6">
@@ -234,11 +286,11 @@ export default function InventoryFeature() {
                     <td className="px-6 py-4">
                       {isLow ? (
                         <span className="flex w-max items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold text-red-600 bg-red-50 border border-red-100">
-                          <AlertCircle size={14} /> Low Stock
+                          Low Stock
                         </span>
                       ) : (
                         <span className="flex w-max items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100">
-                          <CheckCircle2 size={14} /> Available
+                          Available
                         </span>
                       )}
                     </td>
@@ -263,7 +315,24 @@ export default function InventoryFeature() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
-                          onClick={() => openModal(item, "in")}
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openIngredientModal(item)}
+                          className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                        >
+                          <Edit2 size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDeleteModal(item)}
+                          className="h-8 w-8 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                        <div className="w-px h-6 bg-slate-200 self-center mx-1"></div>
+                        <Button
+                          onClick={() => openStockModal(item, "in")}
                           variant="outline"
                           size="sm"
                           className="h-8 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
@@ -271,7 +340,7 @@ export default function InventoryFeature() {
                           <Plus size={14} className="mr-1" /> Masuk
                         </Button>
                         <Button
-                          onClick={() => openModal(item, "out")}
+                          onClick={() => openStockModal(item, "out")}
                           variant="outline"
                           size="sm"
                           className="h-8 border-red-200 text-red-600 hover:bg-red-50"
@@ -293,14 +362,14 @@ export default function InventoryFeature() {
         </div>
       )}
 
-      {/* Modal Input Stock */}
-      {isModalOpen && selectedIngredient && (
+      {/* 1. Modal Input Stock (Masuk/Keluar) */}
+      {isStockModalOpen && selectedIngredient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
               <div>
                 <h3 className="font-bold text-slate-900 text-lg">
-                  {actionType === "in"
+                  {stockActionType === "in"
                     ? "Tambah Stok Masuk"
                     : "Catat Stok Keluar"}
                 </h3>
@@ -309,13 +378,12 @@ export default function InventoryFeature() {
                 </p>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsStockModalOpen(false)}
                 className="text-slate-400 hover:text-slate-700 bg-white p-1 rounded-full"
               >
                 <X size={20} />
               </button>
             </div>
-
             <form onSubmit={handleUpdateStock} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -327,12 +395,12 @@ export default function InventoryFeature() {
                     step="0.1"
                     min="0.1"
                     required
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    value={stockAmount}
+                    onChange={(e) => setStockAmount(e.target.value)}
                     className="pl-10 h-11 rounded-xl border-slate-200 font-bold"
                   />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    {actionType === "in" ? (
+                    {stockActionType === "in" ? (
                       <Plus size={16} className="text-emerald-500" />
                     ) : (
                       <Minus size={16} className="text-red-500" />
@@ -346,21 +414,20 @@ export default function InventoryFeature() {
                 </label>
                 <Input
                   type="text"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
+                  value={stockReason}
+                  onChange={(e) => setStockReason(e.target.value)}
                   placeholder={
-                    actionType === "in"
+                    stockActionType === "in"
                       ? "Cth: Dari Supplier A"
                       : "Cth: Barang Expired / Basi"
                   }
                   className="h-11 rounded-xl border-slate-200"
                 />
               </div>
-
               <div className="pt-4 flex gap-3">
                 <Button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setIsStockModalOpen(false)}
                   variant="outline"
                   className="flex-1 rounded-xl h-11 font-bold"
                 >
@@ -369,12 +436,144 @@ export default function InventoryFeature() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 rounded-xl h-11 font-bold text-white shadow-sm ${actionType === "in" ? "bg-emerald-500 hover:bg-emerald-600" : "bg-red-500 hover:bg-red-600"}`}
+                  className={`flex-1 rounded-xl h-11 font-bold text-white shadow-sm ${stockActionType === "in" ? "bg-emerald-500 hover:bg-emerald-600" : "bg-red-500 hover:bg-red-600"}`}
                 >
                   {isSubmitting ? "Menyimpan..." : "Konfirmasi"}
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Modal Add/Edit Ingredient */}
+      {isIngredientModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">
+                  {ingredientFormMode === "add"
+                    ? "Tambah Bahan Baku Baru"
+                    : "Edit Bahan Baku"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsIngredientModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 bg-white p-1 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleIngredientSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Nama Bahan Baku
+                </label>
+                <Input
+                  required
+                  placeholder="Cth: Bawang Putih"
+                  value={ingredientForm.name}
+                  onChange={(e) =>
+                    setIngredientForm({
+                      ...ingredientForm,
+                      name: e.target.value,
+                    })
+                  }
+                  className="h-11 rounded-xl border-slate-200"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Satuan Ukur
+                  </label>
+                  <Input
+                    required
+                    placeholder="Cth: gram, ml, pcs"
+                    value={ingredientForm.unit}
+                    onChange={(e) =>
+                      setIngredientForm({
+                        ...ingredientForm,
+                        unit: e.target.value,
+                      })
+                    }
+                    className="h-11 rounded-xl border-slate-200"
+                  />
+                </div>
+                {ingredientFormMode === "add" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Stok Awal
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={ingredientForm.stock}
+                      onChange={(e) =>
+                        setIngredientForm({
+                          ...ingredientForm,
+                          stock: e.target.value,
+                        })
+                      }
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="pt-4 flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setIsIngredientModalOpen(false)}
+                  variant="outline"
+                  className="flex-1 rounded-xl h-11 font-bold"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-xl h-11 font-bold bg-[#c94430] hover:bg-[#b03a28] text-white"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Data"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Modal Confirm Delete */}
+      {isDeleteModalOpen && selectedIngredient && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden p-6 animate-in zoom-in-95">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              Hapus Bahan Baku
+            </h3>
+            <p className="text-sm font-medium text-slate-500 mb-8">
+              Yakin ingin menghapus <strong>{selectedIngredient.name}</strong>?
+              Jika item ini digunakan pada resep, proses hapus akan ditolak oleh
+              sistem.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isSubmitting}
+                className="rounded-xl flex-1 font-bold"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={isSubmitting}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex-1"
+              >
+                Hapus
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import Hero from "@/components/home/Hero";
 import StripeBanner from "@/components/home/StripeBanner";
 import MenuList from "@/components/home/MenuList";
 import Features from "@/components/home/Features";
+import ReviewsSection from "@/components/home/ReviewsSection"; // <-- Import
 import Footer from "@/components/layouts/users/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
 
@@ -16,6 +17,7 @@ export default function LandingPage() {
         <StripeBanner />
         <MenuList />
         <Features />
+        <ReviewsSection />
       </main>
 
       <Footer />

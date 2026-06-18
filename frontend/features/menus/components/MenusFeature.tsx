@@ -17,9 +17,9 @@ import {
   ChefHat,
   EyeOff,
   Eye,
-  CheckCircle2,
-  AlertCircle,
+  Minus,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ export default function MenusFeature() {
   const {
     menus,
     categories,
+    ingredients,
     loading,
     searchQuery,
     setSearchQuery,
@@ -59,26 +60,9 @@ export default function MenusFeature() {
     editMenu,
     removeMenu,
     toggleAvailability,
+    addRecipe,
   } = useMenus();
 
-  // Toast
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    type: "success",
-  });
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(
-      () => setToast({ show: false, message: "", type: "success" }),
-      3000,
-    );
-  };
-
-  // Modals State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,13 +71,21 @@ export default function MenusFeature() {
     null,
   );
 
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     category_id: "",
     price: "",
     description: "",
     image_url: "",
+  });
+
+  const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
+  const [recipeForm, setRecipeForm] = useState({
+    prep_time: "",
+    cook_time: "",
+    cost_price: "",
+    instructions: "",
+    recipe_ingredients: [{ id: "", quantity: "" }],
   });
 
   const openAddForm = () => {
@@ -140,16 +132,15 @@ export default function MenusFeature() {
 
       if (formMode === "add") {
         await addMenu(payload);
-        showToast("Menu berhasil ditambahkan!", "success");
+        toast.success("Menu berhasil ditambahkan!");
       } else if (menuToEditOrDelete) {
         await editMenu(menuToEditOrDelete.id, payload);
-        showToast("Menu berhasil diperbarui!", "success");
+        toast.success("Menu berhasil diperbarui!");
       }
       setIsFormModalOpen(false);
     } catch (error) {
-      showToast(
+      toast.error(
         error instanceof Error ? error.message : "Gagal menyimpan menu",
-        "error",
       );
     } finally {
       setIsSubmitting(false);
@@ -161,13 +152,10 @@ export default function MenusFeature() {
     setIsSubmitting(true);
     try {
       await removeMenu(menuToEditOrDelete.id);
-      showToast(`Menu ${menuToEditOrDelete.name} dihapus.`, "success");
+      toast.success(`Menu ${menuToEditOrDelete.name} dihapus.`);
       setIsConfirmModalOpen(false);
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Gagal menghapus",
-        "error",
-      );
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus");
       setIsConfirmModalOpen(false);
     } finally {
       setIsSubmitting(false);
@@ -177,37 +165,87 @@ export default function MenusFeature() {
   const handleToggle = async (menu: Menu) => {
     try {
       await toggleAvailability(menu.id);
-      showToast(
+      toast.success(
         `${menu.name} sekarang ${menu.is_available ? "Habis (Sold Out)" : "Tersedia"}.`,
-        "success",
       );
     } catch (error) {
-      showToast(
+      toast.error(
         error instanceof Error ? error.message : "Gagal mengubah status",
-        "error",
       );
     }
   };
 
+  const handleRecipeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMenu) return;
+
+    const validIngredients = recipeForm.recipe_ingredients.filter(
+      (ing) => ing.id && ing.quantity,
+    );
+
+    if (validIngredients.length === 0) {
+      toast.error("Pilih setidaknya 1 bahan baku!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        prep_time: Number(recipeForm.prep_time),
+        cook_time: Number(recipeForm.cook_time),
+        cost_price: Number(recipeForm.cost_price),
+        instructions: recipeForm.instructions,
+        ingredients: validIngredients.map((ing) => ({
+          id: Number(ing.id),
+          quantity: Number(ing.quantity),
+        })),
+      };
+
+      await addRecipe(selectedMenu.id, payload);
+      toast.success("Resep berhasil disimpan!");
+      setIsCreatingRecipe(false);
+      closeRecipeModal();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal menyimpan resep",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddIngredientRow = () => {
+    setRecipeForm((prev) => ({
+      ...prev,
+      recipe_ingredients: [
+        ...prev.recipe_ingredients,
+        { id: "", quantity: "" },
+      ],
+    }));
+  };
+
+  const handleRemoveIngredientRow = (index: number) => {
+    setRecipeForm((prev) => ({
+      ...prev,
+      recipe_ingredients: prev.recipe_ingredients.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleIngredientChange = (
+    index: number,
+    field: string,
+    value: string,
+  ) => {
+    const updatedIngredients = [...recipeForm.recipe_ingredients];
+    updatedIngredients[index] = {
+      ...updatedIngredients[index],
+      [field]: value,
+    };
+    setRecipeForm({ ...recipeForm, recipe_ingredients: updatedIngredients });
+  };
+
   return (
     <div className="space-y-6 relative">
-      {/* TOAST */}
-      {toast.show && (
-        <div
-          className={cn(
-            "fixed top-6 right-6 z-[100] animate-in slide-in-from-top-4 fade-in duration-300 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-white",
-            toast.type === "success" ? "bg-emerald-500" : "bg-red-500",
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
       {/* DELETE CONFIRM MODAL */}
       {isConfirmModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -359,7 +397,7 @@ export default function MenusFeature() {
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}
                   variant="outline"
-                  className="flex-1 rounded-xl h-11 font-bold"
+                  className="flex-1 rounded-xl h-11 font-bold border-slate-200"
                 >
                   Batal
                 </Button>
@@ -505,7 +543,10 @@ export default function MenusFeature() {
                     "group cursor-pointer rounded-2xl border border-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c94430] transition-all",
                     !menu.is_available && "opacity-60 grayscale-[50%]",
                   )}
-                  onClick={() => openRecipeModal(menu)}
+                  onClick={() => {
+                    setIsCreatingRecipe(false);
+                    openRecipeModal(menu);
+                  }}
                 >
                   <div className="relative h-44 overflow-hidden rounded-t-2xl bg-slate-100">
                     {menu.image_url ? (
@@ -632,7 +673,8 @@ export default function MenusFeature() {
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-              {selectedMenu.recipe ? (
+              {/* JIKA RESEP SUDAH ADA & TIDAK DALAM MODE CREATING */}
+              {selectedMenu.recipe && !isCreatingRecipe ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-3">
@@ -711,28 +753,214 @@ export default function MenusFeature() {
                     </div>
                   </div>
                 </div>
+              ) : isCreatingRecipe ? (
+                /* FORM BUAT RESEP */
+                <form onSubmit={handleRecipeSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Prep Time (Menit)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        required
+                        value={recipeForm.prep_time}
+                        onChange={(e) =>
+                          setRecipeForm({
+                            ...recipeForm,
+                            prep_time: e.target.value,
+                          })
+                        }
+                        className="rounded-xl border-slate-200 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Cook Time (Menit)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        required
+                        value={recipeForm.cook_time}
+                        onChange={(e) =>
+                          setRecipeForm({
+                            ...recipeForm,
+                            cook_time: e.target.value,
+                          })
+                        }
+                        className="rounded-xl border-slate-200 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Modal/HPP (Rp)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        required
+                        value={recipeForm.cost_price}
+                        onChange={(e) =>
+                          setRecipeForm({
+                            ...recipeForm,
+                            cost_price: e.target.value,
+                          })
+                        }
+                        className="rounded-xl border-slate-200 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Instruksi Memasak (SOP)
+                    </label>
+                    <Textarea
+                      required
+                      value={recipeForm.instructions}
+                      onChange={(e) =>
+                        setRecipeForm({
+                          ...recipeForm,
+                          instructions: e.target.value,
+                        })
+                      }
+                      className="rounded-xl min-h-[120px] bg-slate-50 border-slate-200"
+                      placeholder="1. Panaskan minyak...&#10;2. Masukkan bumbu..."
+                    />
+                  </div>
+
+                  <div className="border border-slate-200 rounded-2xl p-5 bg-white">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-bold text-slate-800">
+                        Komposisi Bahan Baku
+                      </h4>
+                      <Button
+                        type="button"
+                        onClick={handleAddIngredientRow}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-lg text-blue-600 border-blue-200 hover:bg-blue-50"
+                      >
+                        <Plus size={14} className="mr-1.5" /> Tambah Bahan
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {recipeForm.recipe_ingredients.map((ing, idx) => (
+                        <div
+                          key={idx}
+                          className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-100"
+                        >
+                          <div className="flex-1">
+                            <Select
+                              value={ing.id}
+                              onValueChange={(val) =>
+                                handleIngredientChange(idx, "id", val)
+                              }
+                            >
+                              <SelectTrigger className="bg-white border-slate-200">
+                                <SelectValue placeholder="Pilih Bahan..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ingredients.map((item) => (
+                                  <SelectItem
+                                    key={item.id}
+                                    value={item.id.toString()}
+                                  >
+                                    {item.name} ({item.unit})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="w-24">
+                            <Input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              placeholder="Qty"
+                              value={ing.quantity}
+                              onChange={(e) =>
+                                handleIngredientChange(
+                                  idx,
+                                  "quantity",
+                                  e.target.value,
+                                )
+                              }
+                              className="bg-white border-slate-200"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveIngredientRow(idx)}
+                            className="text-red-500 hover:bg-red-100 h-10 w-10 shrink-0"
+                          >
+                            <Minus size={16} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreatingRecipe(false)}
+                      className="rounded-xl font-bold border-slate-200"
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="rounded-xl font-bold bg-[#c94430] hover:bg-[#b03a28] text-white"
+                    >
+                      {isSubmitting ? "Menyimpan..." : "Simpan Resep"}
+                    </Button>
+                  </div>
+                </form>
               ) : (
+                /* EMPTY STATE JIKA BELUM ADA RESEP */
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                   <ChefHat size={48} className="mb-4 opacity-50" />
                   <p className="font-medium text-slate-600">
                     Belum ada resep internal untuk menu ini.
                   </p>
-                  <Button className="mt-4 bg-[#c94430] hover:bg-[#b03a28] text-white rounded-xl">
+                  <Button
+                    onClick={() => {
+                      setRecipeForm({
+                        prep_time: "",
+                        cook_time: "",
+                        cost_price: "",
+                        instructions: "",
+                        recipe_ingredients: [{ id: "", quantity: "" }],
+                      });
+                      setIsCreatingRecipe(true);
+                    }}
+                    className="mt-4 bg-[#c94430] hover:bg-[#b03a28] text-white rounded-xl"
+                  >
                     <Plus size={16} className="mr-2" /> Buat Resep Baru
                   </Button>
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={closeRecipeModal}
-                className="rounded-xl font-semibold border-slate-200"
-              >
-                Tutup
-              </Button>
-            </div>
+            {!isCreatingRecipe && (
+              <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={closeRecipeModal}
+                  className="rounded-xl font-semibold border-slate-200"
+                >
+                  Tutup
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

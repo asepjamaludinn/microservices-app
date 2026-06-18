@@ -38,6 +38,7 @@ import { useTables } from "@/hooks/use-tables";
 import type { TableStatus } from "@/types/table";
 import { formatDateTime } from "@/utils/date-formatters";
 import { cn } from "@/lib/utils";
+import TableStatusBadge from "./TableStatusBadge";
 
 const STATUS_OPTIONS: Array<{
   label: string;
@@ -49,30 +50,6 @@ const STATUS_OPTIONS: Array<{
   { label: "Reserved", value: "reserved" },
   { label: "Maintenance", value: "maintenance" },
 ];
-
-function TableStatusBadge({ status }: { status: TableStatus }) {
-  const classNameMap: Record<TableStatus, string> = {
-    available: "bg-emerald-50 text-emerald-600 border border-emerald-100",
-    in_use: "bg-slate-100 text-slate-500 border border-slate-200",
-    reserved: "bg-blue-50 text-blue-600 border border-blue-100",
-    maintenance: "bg-orange-50 text-orange-600 border border-orange-100",
-  };
-
-  const labelMap: Record<TableStatus, string> = {
-    available: "Available",
-    in_use: "In Use",
-    reserved: "Reserved",
-    maintenance: "Maintenance",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-xs font-bold ${classNameMap[status]}`}
-    >
-      {labelMap[status]}
-    </span>
-  );
-}
 
 export default function TablesFeature() {
   const {
@@ -91,7 +68,6 @@ export default function TablesFeature() {
     removeTable,
   } = useTables();
 
-  // State untuk Toast Notification
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -110,7 +86,6 @@ export default function TablesFeature() {
     setTimeout(() => setToast({ show: false, message: "", type }), 3000);
   };
 
-  // State untuk Custom Confirm Modal Delete
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -123,7 +98,6 @@ export default function TablesFeature() {
     onConfirm: () => {},
   });
 
-  // State untuk Modal Add Table
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTable, setNewTable] = useState({
@@ -154,7 +128,6 @@ export default function TablesFeature() {
     }
   };
 
-  // Handler Hapus Meja Menggunakan Custom Modal
   const handleDelete = (id: number, number: string) => {
     setConfirmModal({
       isOpen: true,
@@ -210,7 +183,7 @@ export default function TablesFeature() {
                 onClick={() =>
                   setConfirmModal((prev) => ({ ...prev, isOpen: false }))
                 }
-                className="rounded-xl font-bold flex-1 border-slate-200 text-white"
+                className="rounded-xl font-bold flex-1 border-slate-200 text-slate-600"
               >
                 Batal
               </Button>
@@ -227,7 +200,7 @@ export default function TablesFeature() {
 
       {/* STATISTIK ATAS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#ff5722] rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between h-32">
+        <div className="bg-[#c94430] rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between h-32">
           <div className="absolute -right-4 -top-4 text-white/20">
             <Armchair size={80} />
           </div>
@@ -237,7 +210,7 @@ export default function TablesFeature() {
 
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between h-32">
           <p className="font-bold text-slate-700">Occupied</p>
-          <h2 className="text-4xl font-bold text-[#ff5722] text-right">
+          <h2 className="text-4xl font-bold text-[#c94430] text-right">
             {summary.occupied}
           </h2>
         </div>

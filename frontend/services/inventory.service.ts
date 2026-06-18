@@ -24,3 +24,47 @@ export const updateStock = async (
   }
   return res.json();
 };
+
+export const createIngredient = async (payload: {
+  name: string;
+  unit: string;
+  stock?: number;
+}) => {
+  const res = await fetch("/api/inventory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || "Gagal menambah bahan baku");
+  }
+  return res.json();
+};
+
+export const updateIngredient = async (
+  id: number,
+  payload: { name: string; unit: string },
+) => {
+  const res = await fetch(`/api/inventory/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || "Gagal update bahan baku");
+  }
+  return res.json();
+};
+
+export const deleteIngredient = async (id: number) => {
+  const res = await fetch(`/api/inventory/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || "Gagal menghapus bahan baku");
+  }
+  return res.json();
+};

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Search,
   ShoppingCart,
@@ -15,10 +14,9 @@ import {
   Plus,
   Trash2,
   Receipt,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,53 +62,13 @@ export default function POSFeature() {
   const taxAmount = subtotal * 0.11;
   const totalAmount = subtotal + taxAmount;
 
-  // Custom Toast State
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type }), 3000);
-  };
-
   const handleAddToCart = (menu: Menu) => {
     cartStore.addToCart(menu);
-    showToast(`${menu.name} ditambahkan ke pesanan!`, "success");
-  };
-
-  const handleCheckoutSuccess = async (data: any) => {
-    await onSubmit(data, showToast);
+    toast.success(`${menu.name} ditambahkan ke pesanan!`);
   };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)] relative">
-      {/* TOAST NOTIFICATION */}
-      {toast.show && (
-        <div
-          className={cn(
-            "fixed top-6 right-6 z-50 animate-in slide-in-from-top-4 fade-in duration-300 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-white",
-            toast.type === "success" ? "bg-emerald-500" : "bg-red-500",
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
       {/* KIRI: KATALOG MENU */}
       <div className="flex-1 flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50">
@@ -200,7 +158,7 @@ export default function POSFeature() {
 
       {/* KANAN: KERANJANG & CHECKOUT FORM */}
       <form
-        onSubmit={handleSubmit(handleCheckoutSuccess)}
+        onSubmit={handleSubmit(onSubmit)}
         className="w-full lg:w-[400px] xl:w-[450px] bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col flex-shrink-0"
       >
         <div className="p-5 border-b border-slate-100 bg-[#c94430] text-white rounded-t-3xl flex items-center justify-between">
@@ -262,7 +220,6 @@ export default function POSFeature() {
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
               <MapPin size={18} className="text-slate-400 shrink-0" />
               <div className="relative w-full">
-                {/* SELECT MENGGUNAKAN SHADCN UI (Portaled to body, bebas dari overflow) */}
                 <Select
                   onValueChange={(value) =>
                     setValue("tableNumber", value, { shouldValidate: true })

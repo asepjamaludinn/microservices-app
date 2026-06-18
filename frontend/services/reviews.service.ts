@@ -1,0 +1,34 @@
+import type { Review, PaginatedReviewResponse } from "@/types/review";
+
+type CreateReviewPayload = {
+  order_id: number;
+  customer_name: string;
+  rating: number;
+  comment: string;
+};
+
+async function safeJson<T>(res: Response): Promise<T> {
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || "Request gagal");
+  return data;
+}
+
+export async function getReviews(page = 1) {
+  const res = await fetch(`/api/reviews?page=${page}`, { cache: "no-store" });
+  const response = await safeJson<{ data: PaginatedReviewResponse }>(res);
+  return {
+    reviews: response.data.data,
+    currentPage: response.data.current_page,
+    totalPages: response.data.last_page,
+  };
+}
+
+export async function createReview(payload: CreateReviewPayload) {
+  return safeJson(
+    await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  );
+}

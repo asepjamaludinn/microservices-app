@@ -48,6 +48,13 @@ export async function getCategoriesList() {
   return response.data;
 }
 
+export async function getIngredientsList() {
+  const response = await safeJson<ApiResponse<any[]>>(
+    await fetch("/api/ingredients", { cache: "no-store" }),
+  );
+  return response.data;
+}
+
 export async function createMenu(payload: Partial<Menu>) {
   return safeJson(
     await fetch("/api/menus", {
@@ -74,4 +81,14 @@ export async function deleteMenu(id: number) {
 
 export async function toggleMenuAvailability(id: number) {
   return safeJson(await fetch(`/api/menus/${id}/status`, { method: "PATCH" }));
+}
+
+export async function createMenuRecipe(menuId: number, payload: any) {
+  return safeJson(
+    await fetch(`/api/menus/${menuId}/recipes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  );
 }

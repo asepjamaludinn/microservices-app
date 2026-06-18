@@ -1,54 +1,15 @@
-import { NextResponse } from "next/server";
-import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
-import {
-  gatewayError,
-  getErrorMessage,
-  readJsonSafe,
-} from "@/lib/api-response";
+import { proxyRequest } from "@/lib/api-proxy";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = await getJwtToken();
+  const { id } = await params;
+  const body = await request.json();
 
-  if (!token) {
-    return gatewayError("Unauthorized", 401);
-  }
-
-  try {
-    const body = await request.json();
-    const { id } = await params;
-    const projectUrl = getProjectServiceUrl();
-
-    const backendResponse = await fetch(
-      `${projectUrl}/api/inventory/${id}/stock`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
-      },
-    );
-
-    const data = await readJsonSafe(backendResponse);
-
-    if (!backendResponse.ok) {
-      return NextResponse.json(
-        {
-          status: "Error",
-          error: getErrorMessage(data, "Gagal update stok"),
-          data,
-        },
-        { status: backendResponse.status },
-      );
-    }
-
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch {
-    return gatewayError("Gagal menghubungi Project Service");
-  }
+  return proxyRequest(`/api/inventory/${id}/stock`, {
+    method: "POST",
+    body,
+    errorMessage: "Gagal update stok",
+  });
 }

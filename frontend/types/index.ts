@@ -5,3 +5,4 @@ export * from "./order";
 export * from "./table";
 export * from "./category";
 export * from "./audit-log";
+export * from "./review";

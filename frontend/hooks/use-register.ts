@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { registerUser } from "@/services/auth.service";
 
 export function useRegister() {
@@ -26,7 +27,6 @@ export function useRegister() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError("");
     setLoading(true);
 
@@ -38,8 +38,9 @@ export function useRegister() {
 
     try {
       await registerUser(formData);
-
-      alert("Registrasi berhasil! Silakan login dengan akun baru Anda.");
+      toast.success(
+        "Registrasi berhasil! Silakan login dengan akun baru Anda.",
+      );
       router.push("/login");
     } catch (err) {
       setError(

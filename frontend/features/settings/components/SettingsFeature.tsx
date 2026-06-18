@@ -1,10 +1,10 @@
 "use client";
 
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useSettings } from "@/hooks/use-settings";
 
 export default function SettingsFeature() {
-  const { formData, loading, message, handleChange, handleUpdatePassword } =
+  const { formData, loading, handleChange, handleUpdatePassword } =
     useSettings();
 
   return (
@@ -35,19 +35,6 @@ export default function SettingsFeature() {
         </div>
 
         <div className="p-6">
-          {message.text && (
-            <div
-              className={`px-4 py-3 rounded-xl text-sm font-medium mb-6 flex items-center gap-2 ${
-                message.type === "success"
-                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                  : "bg-red-50 text-red-600 border border-red-100"
-              }`}
-            >
-              {message.type === "success" && <ShieldCheck size={18} />}
-              {message.text}
-            </div>
-          )}
-
           <form onSubmit={handleUpdatePassword} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">

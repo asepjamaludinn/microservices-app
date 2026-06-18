@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { Menu } from "@/types/menu";
+import type { Category } from "@/types/category";
+import type { Ingredient } from "@/types/inventory";
 import {
   getMenus,
   getCategoriesList,
@@ -9,93 +11,106 @@ import {
   updateMenu,
   deleteMenu,
   toggleMenuAvailability,
+  getIngredientsList,
+  createMenuRecipe,
 } from "@/services/menus.service";
 
 export function useMenus() {
   const [menus, setMenus] = useState<Menu[]>([]);
-  const [categories, setCategories] = useState<
-    { id: number; name: string; slug: string }[]
-  >([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
 
-  const fetchMenus = useCallback(async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getMenus({
+      const [menusData, categoriesData, ingredientsData] = await Promise.all([
+        getMenus({ category: selectedCategory, rating: selectedRating }),
+        getCategoriesList(),
+        getIngredientsList(),
+      ]);
+      setMenus(menusData);
+      setCategories(categoriesData as Category[]);
+      setIngredients(ingredientsData);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, selectedRating]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const menusData = await getMenus({
         search: searchQuery,
         category: selectedCategory,
         rating: selectedRating,
       });
-      setMenus(data);
-    } catch (err) {
-      console.error(err);
-      setMenus([]);
+      setMenus(menusData);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, selectedRating]);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await getCategoriesList();
-      setCategories(data);
-    } catch (err) {
-      console.error("Gagal load kategori", err);
-    }
   };
 
-  useEffect(() => {
-    fetchMenus();
-  }, [fetchMenus]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const handleSearch = () => fetchMenus();
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch();
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   const openRecipeModal = (menu: Menu) => {
     setSelectedMenu(menu);
     setIsRecipeModalOpen(true);
   };
+
   const closeRecipeModal = () => {
     setIsRecipeModalOpen(false);
     setTimeout(() => setSelectedMenu(null), 200);
   };
 
-  const addMenu = async (payload: Partial<Menu>) => {
+  const addMenu = async (payload: any) => {
     await createMenu(payload);
-    await fetchMenus();
+    await handleSearch();
   };
 
-  const editMenu = async (id: number, payload: Partial<Menu>) => {
+  const editMenu = async (id: number, payload: any) => {
     await updateMenu(id, payload);
-    await fetchMenus();
+    await handleSearch();
   };
 
   const removeMenu = async (id: number) => {
     await deleteMenu(id);
-    await fetchMenus();
+    await handleSearch();
   };
 
   const toggleAvailability = async (id: number) => {
     await toggleMenuAvailability(id);
-    await fetchMenus();
+    await handleSearch();
+  };
+
+  const addRecipe = async (menuId: number, payload: any) => {
+    await createMenuRecipe(menuId, payload);
+    await handleSearch();
   };
 
   return {
     menus,
     categories,
+    ingredients,
     loading,
     searchQuery,
     setSearchQuery,
@@ -113,5 +128,6 @@ export function useMenus() {
     editMenu,
     removeMenu,
     toggleAvailability,
+    addRecipe,
   };
 }

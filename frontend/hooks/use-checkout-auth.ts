@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { getCurrentUser } from "@/services/auth.service";
 
 export function useCheckoutAuth() {
@@ -11,7 +12,7 @@ export function useCheckoutAuth() {
       await getCurrentUser();
       router.push("/dashboard");
     } catch {
-      alert("Silakan Login terlebih dahulu untuk melanjutkan pesanan.");
+      toast.error("Silakan Login terlebih dahulu untuk melanjutkan pesanan.");
       router.push("/login");
     } finally {
       afterCheck?.();

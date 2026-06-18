@@ -1,23 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Tags,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+import { Search, Plus, Edit2, Trash2, X, Tags } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/use-categories";
 import type { Category } from "@/types/category";
-import { cn } from "@/lib/utils";
 
 export default function CategoriesFeature() {
   const {
@@ -30,26 +21,6 @@ export default function CategoriesFeature() {
     removeCategory,
   } = useCategories();
 
-  // Toast State
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type }), 3000);
-  };
-
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -76,7 +47,6 @@ export default function CategoriesFeature() {
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    // Auto-generate slug dari nama
     const slug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -90,16 +60,15 @@ export default function CategoriesFeature() {
     try {
       if (editingCategory) {
         await editCategory(editingCategory.id, formData);
-        showToast("Kategori berhasil diperbarui!");
+        toast.success("Kategori berhasil diperbarui!");
       } else {
         await addCategory(formData);
-        showToast("Kategori baru berhasil ditambahkan!");
+        toast.success("Kategori baru berhasil ditambahkan!");
       }
       setIsModalOpen(false);
     } catch (error) {
-      showToast(
+      toast.error(
         error instanceof Error ? error.message : "Gagal menyimpan kategori",
-        "error",
       );
     } finally {
       setIsSubmitting(false);
@@ -115,11 +84,10 @@ export default function CategoriesFeature() {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         try {
           await removeCategory(category.id);
-          showToast(`Kategori ${category.name} berhasil dihapus.`);
+          toast.success(`Kategori ${category.name} berhasil dihapus.`);
         } catch (error) {
-          showToast(
+          toast.error(
             error instanceof Error ? error.message : "Gagal menghapus kategori",
-            "error",
           );
         }
       },
@@ -128,22 +96,6 @@ export default function CategoriesFeature() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
-      {toast.show && (
-        <div
-          className={cn(
-            "fixed top-6 right-6 z-50 animate-in slide-in-from-top-4 fade-in duration-300 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-white",
-            toast.type === "success" ? "bg-emerald-500" : "bg-red-500",
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
       {/* CONFIRMATION MODAL */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import type { RestaurantTable, TableStatus } from "@/types/table";
 import {
   createTable,
@@ -41,13 +42,13 @@ export function useTables() {
     setActiveActionMenu(null);
     try {
       await updateTableStatus(id, status);
+      toast.success("Status meja berhasil diubah.");
       await fetchTables();
     } catch {
-      alert("Gagal merubah status meja.");
+      toast.error("Gagal merubah status meja.");
     }
   };
 
-  // Fungsi baru untuk menerima data input form
   const addTable = async (payload: {
     table_number: string;
     area: string;
@@ -61,7 +62,6 @@ export function useTables() {
     await fetchTables();
   };
 
-  // Fungsi baru untuk menghapus meja
   const removeTable = async (id: number) => {
     setActiveActionMenu(null);
     await apiDeleteTable(id);
@@ -84,7 +84,6 @@ export function useTables() {
   const processedTables = useMemo(() => {
     return tables.filter((table) => {
       const search = searchQuery.toLowerCase();
-
       const matchSearch =
         table.table_number.toLowerCase().includes(search) ||
         table.area.toLowerCase().includes(search) ||

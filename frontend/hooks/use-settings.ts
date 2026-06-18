@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { updatePassword } from "@/services/settings.service";
-
-type Message = {
-  type: "success" | "error" | "";
-  text: string;
-};
 
 export function useSettings() {
   const [formData, setFormData] = useState({
@@ -16,10 +12,6 @@ export function useSettings() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<Message>({
-    type: "",
-    text: "",
-  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -30,15 +22,10 @@ export function useSettings() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setMessage({ type: "", text: "" });
     setLoading(true);
 
     if (formData.new_password !== formData.confirm_password) {
-      setMessage({
-        type: "error",
-        text: "Konfirmasi password baru tidak cocok!",
-      });
+      toast.error("Konfirmasi password baru tidak cocok!");
       setLoading(false);
       return;
     }
@@ -49,10 +36,7 @@ export function useSettings() {
         new_password: formData.new_password,
       });
 
-      setMessage({
-        type: "success",
-        text: response.message,
-      });
+      toast.success(response.message || "Password berhasil diperbarui!");
 
       setFormData({
         old_password: "",
@@ -60,11 +44,9 @@ export function useSettings() {
         confirm_password: "",
       });
     } catch (err) {
-      setMessage({
-        type: "error",
-        text:
-          err instanceof Error ? err.message : "Terjadi kesalahan jaringan.",
-      });
+      toast.error(
+        err instanceof Error ? err.message : "Terjadi kesalahan jaringan.",
+      );
     } finally {
       setLoading(false);
     }
@@ -73,7 +55,6 @@ export function useSettings() {
   return {
     formData,
     loading,
-    message,
     handleChange,
     handleUpdatePassword,
   };

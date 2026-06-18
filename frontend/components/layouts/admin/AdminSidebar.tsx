@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   ClipboardList,
   UtensilsCrossed,
-  ChefHat,
   BookOpen,
   PackageOpen,
   LogOut,
@@ -15,6 +14,9 @@ import {
   Receipt,
   Tags,
   History,
+  CalendarRange,
+  Banknote,
+  MessageSquare,
 } from "lucide-react";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -24,14 +26,17 @@ const menuItems = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "POS", href: "/admin/dashboard/pos", icon: Receipt },
   { name: "Orders", href: "/admin/dashboard/orders", icon: ClipboardList },
+  {
+    name: "Reservations",
+    href: "/admin/dashboard/reservations",
+    icon: CalendarRange,
+  },
+  { name: "Payments", href: "/admin/dashboard/payments", icon: Banknote },
   { name: "Tables", href: "/admin/dashboard/tables", icon: UtensilsCrossed },
   { name: "Categories", href: "/admin/dashboard/categories", icon: Tags },
   { name: "Menus", href: "/admin/dashboard/menus", icon: BookOpen },
-  {
-    name: "Inventory",
-    href: "/admin/dashboard/inventory",
-    icon: PackageOpen,
-  },
+  { name: "Inventory", href: "/admin/dashboard/inventory", icon: PackageOpen },
+  { name: "Reviews", href: "/admin/dashboard/reviews", icon: MessageSquare },
   { name: "Audit Logs", href: "/admin/dashboard/audit-logs", icon: History },
 ];
 

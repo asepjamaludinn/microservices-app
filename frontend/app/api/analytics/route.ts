@@ -1,30 +1,7 @@
-import { NextResponse } from "next/server";
-import { getJwtToken, getProjectServiceUrl } from "@/lib/server-auth";
-import { gatewayError, readJsonSafe } from "@/lib/api-response";
+import { proxyRequest } from "@/lib/api-proxy";
 
 export async function GET() {
-  const token = await getJwtToken();
-
-  if (!token) {
-    return gatewayError("Unauthorized", 401);
-  }
-
-  try {
-    const projectUrl = getProjectServiceUrl();
-
-    const backendResponse = await fetch(`${projectUrl}/api/analytics`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
-
-    const data = await readJsonSafe(backendResponse);
-
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch {
-    return gatewayError("Gagal memuat analytics");
-  }
+  return proxyRequest("/api/analytics", {
+    errorMessage: "Gagal memuat analytics",
+  });
 }

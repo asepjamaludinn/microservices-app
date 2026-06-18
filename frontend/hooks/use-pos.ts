@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
 
 import { orderSchema, type OrderFormValues } from "@/schemas/order.schema";
 import { useCartStore } from "@/store/useCartStore";
@@ -60,15 +61,9 @@ export function usePOS() {
     );
   }, [menus, searchQuery]);
 
-  const onSubmit = async (
-    values: OrderFormValues,
-    showToast: (msg: string, type: "success" | "error") => void,
-  ) => {
+  const onSubmit = async (values: OrderFormValues) => {
     if (cartStore.cart.length === 0) {
-      showToast(
-        "Keranjang kosong! Silakan pilih menu terlebih dahulu.",
-        "error",
-      );
+      toast.error("Keranjang kosong! Silakan pilih menu terlebih dahulu.");
       return;
     }
 
@@ -95,11 +90,10 @@ export function usePOS() {
       const newTables = await getTables();
       setTables(newTables.filter((t) => t.status === "available"));
 
-      showToast("Pesanan berhasil diproses!", "success");
+      toast.success("Pesanan berhasil diproses!");
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error ? err.message : "Gagal membuat pesanan.",
-        "error",
       );
     } finally {
       setIsSubmitting(false);

@@ -1,13 +1,64 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { Clock, LogOut, ReceiptText, Utensils } from "lucide-react";
+import {
+  Clock,
+  LogOut,
+  ReceiptText,
+  Utensils,
+  Star,
+  MessageSquare,
+} from "lucide-react";
+import toast from "react-hot-toast";
+
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useUserDashboard } from "@/hooks/use-user-dashboard";
 import { formatCurrency, formatOrderNumber } from "@/utils/order-formatters";
+import { createReview } from "@/services/reviews.service";
 
 export default function UserDashboardFeature() {
   const { user, orders, loading, handleLogout } = useUserDashboard();
+
+  const [reviewModal, setReviewModal] = useState<{
+    isOpen: boolean;
+    orderId: number | null;
+  }>({ isOpen: false, orderId: null });
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const openReviewModal = (orderId: number) => {
+    setRating(5);
+    setComment("");
+    setReviewModal({ isOpen: true, orderId });
+  };
+
+  const closeReviewModal = () => {
+    setReviewModal({ isOpen: false, orderId: null });
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewModal.orderId || !user?.name) return;
+
+    setIsSubmitting(true);
+    try {
+      await createReview({
+        order_id: reviewModal.orderId,
+        customer_name: user.name,
+        rating,
+        comment,
+      });
+      toast.success("Terima kasih! Ulasan Anda berhasil dikirim.");
+      closeReviewModal();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -29,14 +80,12 @@ export default function UserDashboardFeature() {
               className="object-contain object-left"
             />
           </div>
-
           <Button
             variant="ghost"
             onClick={handleLogout}
             className="text-slate-500 hover:text-red-500 rounded-xl"
           >
-            <LogOut size={18} className="mr-2" />
-            Logout
+            <LogOut size={18} className="mr-2" /> Logout
           </Button>
         </div>
       </header>
@@ -51,7 +100,6 @@ export default function UserDashboardFeature() {
               Lapar? Kunjungi kasir untuk memesan hidangan favorit Anda.
             </p>
           </div>
-
           <div className="absolute right-[-5%] top-[-20%] text-white/10">
             <Utensils size={180} />
           </div>
@@ -59,8 +107,7 @@ export default function UserDashboardFeature() {
 
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-            <ReceiptText className="text-[#c94430]" />
-            Riwayat Pesanan Saya
+            <ReceiptText className="text-[#c94430]" /> Riwayat Pesanan Saya
           </h2>
 
           {orders.length === 0 ? (
@@ -80,24 +127,34 @@ export default function UserDashboardFeature() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-50">
                     <div>
                       <p className="text-xs font-bold text-slate-400 flex items-center gap-1 mb-1">
-                        <Clock size={12} />
+                        <Clock size={12} />{" "}
                         {new Date(order.created_at).toLocaleString("id-ID")}
                       </p>
-
                       <h3 className="font-bold text-slate-900 text-lg">
                         Order {formatOrderNumber(order.id)}
                       </h3>
-
                       <p className="text-sm font-semibold text-[#c94430] capitalize mt-0.5">
-                        {order.order_type.replace("_", " ")}
+                        {order.order_type.replace("_", " ")}{" "}
                         {order.table_number && ` • Meja ${order.table_number}`}
                       </p>
                     </div>
 
-                    <div className="text-left sm:text-right">
+                    <div className="text-left sm:text-right flex flex-col items-start sm:items-end">
                       <p className="font-bold text-lg text-slate-900 mt-2">
                         {formatCurrency(order.total_amount)}
                       </p>
+
+                      {order.status === "completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openReviewModal(order.id)}
+                          className="mt-2 text-xs font-bold text-orange-600 border-orange-200 hover:bg-orange-50 rounded-lg h-8"
+                        >
+                          <Star size={14} className="mr-1.5 fill-current" />{" "}
+                          Beri Ulasan
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -113,7 +170,6 @@ export default function UserDashboardFeature() {
                           </span>
                           {item.menu?.name || "Menu Terhapus"}
                         </span>
-
                         <span className="text-slate-500 font-medium">
                           {formatCurrency(item.subtotal)}
                         </span>
@@ -126,6 +182,78 @@ export default function UserDashboardFeature() {
           )}
         </div>
       </main>
+
+      {reviewModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95">
+            <h3 className="font-bold text-xl text-slate-900 mb-1 flex items-center gap-2">
+              <MessageSquare className="text-[#c94430]" size={20} /> Beri Ulasan
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Bagaimana pengalaman Anda untuk Order{" "}
+              {formatOrderNumber(reviewModal.orderId!)}?
+            </p>
+
+            <form onSubmit={submitReview} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setRating(star)}
+                      className="p-1 outline-none transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={32}
+                        className={
+                          star <= rating
+                            ? "text-yellow-400 fill-current drop-shadow-sm"
+                            : "text-slate-200"
+                        }
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Komentar
+                </label>
+                <Textarea
+                  required
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Ceritakan pengalaman rasa masakan atau pelayanan kami..."
+                  className="rounded-xl min-h-[100px] bg-slate-50 border-slate-200"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeReviewModal}
+                  className="flex-1 rounded-xl h-11 font-bold"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-xl h-11 bg-[#c94430] hover:bg-[#b03a28] text-white font-bold"
+                >
+                  {isSubmitting ? "Mengirim..." : "Kirim Ulasan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
