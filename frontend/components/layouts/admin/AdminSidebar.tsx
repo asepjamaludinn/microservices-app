@@ -10,9 +10,10 @@ import {
   UtensilsCrossed,
   ChefHat,
   BookOpen,
-  LineChart,
+  PackageOpen,
   LogOut,
   Settings,
+  Receipt,
 } from "lucide-react";
 
 export default function AdminSidebar() {
@@ -40,11 +41,16 @@ export default function AdminSidebar() {
 
   const menuItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "POS", href: "/admin/dashboard/pos", icon: Receipt },
     { name: "Orders", href: "/admin/dashboard/orders", icon: ClipboardList },
     { name: "Tables", href: "/admin/dashboard/tables", icon: UtensilsCrossed },
-    { name: "Kitchen", href: "/admin/dashboard/kitchen", icon: ChefHat },
     { name: "Menus", href: "/admin/dashboard/menus", icon: BookOpen },
-    { name: "Analytics", href: "/admin/dashboard/analytics", icon: LineChart },
+    { name: "Kitchen", href: "/admin/dashboard/kitchen", icon: ChefHat }, // ganti ke reviews gmn?
+    {
+      name: "Inventory",
+      href: "/admin/dashboard/inventory",
+      icon: PackageOpen,
+    },
   ];
 
   const handleLogout = async () => {

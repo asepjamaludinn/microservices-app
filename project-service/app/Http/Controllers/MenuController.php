@@ -4,23 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\Menu;
 use App\Models\Recipe;
+use App\Models\Category;
+use App\Models\Ingredient;
+use Illuminate\Http\Request;
 use App\Http\Requests\StoreMenuRequest;
 use App\Http\Requests\StoreRecipeRequest;
+use App\Http\Requests\UpdateMenuRequest; 
 
 class MenuController extends Controller
 {
-    /**
-     * PUBLIC: Semua orang bisa melihat daftar menu.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $menus = Menu::with('category')->where('is_available', true)->get();
+        $query = Menu::with('category')->where('is_available', true);
+
+
+        if ($request->has('search')) {
+            $query->where('name', 'ilike', '%' . $request->search . '%');
+        }
+
+        if ($request->has('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('slug', $request->category);
+            });
+        }
+
+        $allowedSorts = ['price', 'rating', 'created_at', 'name'];
+        $sortBy = $request->query('sort_by', 'created_at');
+        $sortOrder = $request->query('sort_order', 'desc');
+
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder === 'asc' ? 'asc' : 'desc');
+        }
+
+        $menus = $query->paginate(12);
+
         return $this->successResponse($menus, 'Katalog menu berhasil diambil.');
     }
 
-    /**
-     * ADMIN ONLY: Menambah menu baru ke katalog.
-     */
+    public function getCategories()
+    {
+        $categories = Category::orderBy('name', 'asc')->get();
+        return $this->successResponse($categories, 'Daftar kategori berhasil diambil.');
+    }
+
+  
     public function storeMenu(StoreMenuRequest $request)
     {
         $menu = Menu::create([
@@ -31,14 +58,43 @@ class MenuController extends Controller
             'description' => $request->description,
             'image_url' => $request->image_url, 
             'is_available' => $request->is_available ?? true,
+            'rating' => 0, 
         ]);
 
         return $this->successResponse($menu, 'Menu berhasil ditambahkan ke katalog.', 201);
     }
 
-    /**
-     * ADMIN ONLY: Menambah resep rahasia dan menyimpan relasi bahan (Pivot Table).
-     */
+    public function updateMenu(UpdateMenuRequest $request, $id)
+    {
+        $menu = Menu::findOrFail($id);
+        
+        $menu->update($request->only([
+            'category_id', 'name', 'price', 'description', 'image_url'
+        ]));
+
+        return $this->successResponse($menu->fresh('category'), 'Data menu berhasil diperbarui.');
+    }
+
+    public function toggleAvailability($id)
+    {
+        $menu = Menu::findOrFail($id);
+        $menu->is_available = !$menu->is_available; 
+        $menu->save();
+
+        $status = $menu->is_available ? 'Tersedia' : 'Habis (Sold Out)';
+        return $this->successResponse($menu, "Status menu sekarang: $status.");
+    }
+
+
+    public function destroyMenu($id)
+    {
+        $menu = Menu::findOrFail($id);
+        $menu->delete();
+
+        return $this->successResponse(null, 'Menu berhasil dihapus permanen dari sistem.');
+    }
+
+
     public function storeRecipe(StoreRecipeRequest $request, $menuId)
     {
         $menu = Menu::findOrFail($menuId);
@@ -66,38 +122,31 @@ class MenuController extends Controller
         );
     }
 
-    /**
-     * ADMIN ONLY: Melihat daftar menu beserta resep rahasia dan modalnya.
-     */
-    public function getInternalRecipes()
-    {
-        $menus = Menu::with(['category', 'recipe.ingredients'])->orderBy('created_at', 'desc')->get();
-        return $this->successResponse($menus, 'Data resep internal berhasil diambil.');
-    }
 
-    
-    public function update(StoreMenuRequest $request, $id)
+   public function getInternalRecipes(Request $request)
     {
-        $menu = Menu::findOrFail($id);
+        $query = Menu::with(['category', 'recipe.ingredients'])->orderBy('created_at', 'desc');
+
+        if ($request->has('search') && $request->search !== '') {
+            $query->where('name', 'ilike', '%' . $request->search . '%');
+        }
         
-        $menu->update([
-            'category_id' => $request->category_id,
-            'name' => $request->name,
-            'price' => $request->price,
-            'description' => $request->description,
-            'image_url' => $request->image_url,
-            'is_available' => $request->is_available ?? $menu->is_available,
-        ]);
+        if ($request->has('category') && $request->category !== 'All') {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', $request->category);
+            });
+        }
 
-        return $this->successResponse($menu, 'Menu berhasil diperbarui.');
+        if ($request->has('rating') && $request->rating !== '') {
+            $query->where('rating', '>=', $request->rating);
+        }
+
+        return $this->successResponse($query->get(), 'Data operasional menu berhasil diambil.');
     }
 
-    public function destroy($id)
+    public function getIngredients()
     {
-        $menu = Menu::findOrFail($id);
-        $menu->delete();
-
-        return $this->successResponse(null, 'Menu berhasil dihapus.');
+        $ingredients = Ingredient::orderBy('name', 'asc')->get();
+        return $this->successResponse($ingredients, 'Master bahan baku berhasil diambil.');
     }
 }
-

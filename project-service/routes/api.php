@@ -2,20 +2,58 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\TableController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AuditLogController;
 
 Route::get('menus', [MenuController::class, 'index']);
+Route::get('categories', [MenuController::class, 'getCategories']);
+Route::get('reviews', [ReviewController::class, 'index']); 
 
-
+Route::middleware(['jwt.role:admin,user'])->group(function () {
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('my-orders', [OrderController::class, 'myOrders']);
+    Route::post('reviews', [ReviewController::class, 'store']); 
+});
 
 Route::middleware(['jwt.role:admin'])->group(function () {
+    Route::get('analytics', [OrderController::class, 'getAnalytics']);
     
-    // CRUD Katalog Menu
+    // CRUD Kategori
+    Route::post('categories', [CategoryController::class, 'store']);
+    Route::put('categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
+
+    // Manajemen Menu Utama
     Route::post('menus', [MenuController::class, 'storeMenu']);
-    Route::put('menus/{id}', [MenuController::class, 'update']); 
-    Route::delete('menus/{id}', [MenuController::class, 'destroy']);
+    Route::put('menus/{id}', [MenuController::class, 'updateMenu']);
+    Route::delete('menus/{id}', [MenuController::class, 'destroyMenu']);
+    Route::patch('menus/{id}/status', [MenuController::class, 'toggleAvailability']);
     
-    // CRUD Resep Internal & HPP
+    // Manajemen Resep
+    Route::get('ingredients', [MenuController::class, 'getIngredients']);
     Route::post('menus/{id}/recipes', [MenuController::class, 'storeRecipe']);
     Route::get('internal/recipes', [MenuController::class, 'getInternalRecipes']);
+
+    // Transaksi & POS
+    Route::get('orders', [OrderController::class, 'index']); 
+    Route::patch('orders/{id}/status', [OrderController::class, 'updateStatus']); 
+    Route::patch('orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']); 
+
+    // Manajemen Meja
+    Route::get('tables', [TableController::class, 'index']);
+    Route::post('tables', [TableController::class, 'store']);
+    Route::patch('tables/{id}/status', [TableController::class, 'updateStatus']);
     
+    // Manajemen Inventaris 
+    Route::get('inventory', [InventoryController::class, 'index']);
+    Route::post('inventory', [InventoryController::class, 'store']); 
+    Route::put('inventory/{id}', [InventoryController::class, 'update']); 
+    Route::delete('inventory/{id}', [InventoryController::class, 'destroy']); 
+    Route::post('inventory/{id}/stock', [InventoryController::class, 'updateStock']); 
+
+    Route::get('audit-logs', [AuditLogController::class, 'index']);
 });

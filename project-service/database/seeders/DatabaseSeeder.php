@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Review; 
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,6 +13,24 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             IngredientSeeder::class,
             MenuRecipeSeeder::class,
+        ]);
+
+        Review::create([
+            'customer_name' => 'Alice Johnson',
+            'rating' => 5,
+            'comment' => 'Makanan luar biasa, Nasi Goreng Nusantara-nya benar-benar juara bumbunya!',
+        ]);
+
+        Review::create([
+            'customer_name' => 'Bob Smith',
+            'rating' => 4,
+            'comment' => 'Porsinya banyak, tapi ayamnya agak sedikit keasinan bagi lidah saya. Overall good!',
+        ]);
+
+        Review::create([
+            'customer_name' => 'Asep Jamaludin',
+            'rating' => 5,
+            'comment' => 'Sistem pemesanannya sangat cepat, tidak perlu nunggu lama makanan langsung datang.',
         ]);
     }
 }

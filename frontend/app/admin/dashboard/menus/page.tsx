@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// 1. Definisikan ulang Tipe Data agar mencakup Resep & Ingredients
 type Ingredient = {
   id: number;
   name: string;
@@ -52,30 +51,56 @@ type Menu = {
   recipe?: Recipe;
 };
 
+const CATEGORIES = ["All", "Main Course", "Appetizer", "Dessert", "Beverage"];
+
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 2. State untuk mengontrol Modal
+  // State untuk Filter & Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedRating, setSelectedRating] = useState<number | null>(null); // State Baru untuk Rating
+
+  // State untuk mengontrol Modal
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchMenus = async () => {
-      try {
-        const res = await fetch("/api/menus/internal");
-        const data = await res.json();
-        if (res.ok) {
-          setMenus(data.data || []);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMenus();
-  }, []);
+  const fetchMenus = async (
+    search = "",
+    category = "All",
+    rating: number | null = null,
+  ) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (category !== "All") params.append("category", category);
+      if (rating !== null) params.append("rating", rating.toString()); // Tambahkan Rating ke API
 
-  // Fungsi untuk membuka dan menutup Modal
+      const res = await fetch(`/api/menus/internal?${params.toString()}`);
+      const responseData = await res.json();
+
+      if (res.ok && responseData.data) {
+        setMenus(responseData.data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenus(searchQuery, selectedCategory, selectedRating);
+  }, [selectedCategory, selectedRating]); // Akan fetch ulang jika Kategori / Rating diklik
+
+  const handleSearch = () => {
+    fetchMenus(searchQuery, selectedCategory, selectedRating);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   const openModal = (menu: Menu) => {
     setSelectedMenu(menu);
     setIsModalOpen(true);
@@ -83,16 +108,8 @@ export default function MenusPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setTimeout(() => setSelectedMenu(null), 200); // Jeda agar animasi smooth
+    setTimeout(() => setSelectedMenu(null), 200);
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 relative">
@@ -107,40 +124,35 @@ export default function MenusPage() {
           </p>
         </div>
 
-        <Button className="rounded-xl bg-primary px-4 py-5 font-semibold text-primary-foreground hover:bg-primary-hover shadow-sm">
+        <Button className="rounded-xl bg-[#c94430] px-4 py-5 font-semibold text-white hover:bg-[#b03a28] shadow-sm">
           <Plus size={18} className="mr-2" />
           Tambah Menu
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_1fr]">
-        {/* Filter Sidebar (Sama seperti sebelumnya) */}
-        <aside className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        {/* Filter Sidebar */}
+        <aside className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm h-fit">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="font-bold text-slate-900">Filter</h3>
             <SlidersHorizontal size={18} className="text-slate-400" />
           </div>
 
           <div className="space-y-6 text-sm">
+            {/* Category Filter */}
             <div>
               <h4 className="mb-3 font-semibold text-slate-700">Category</h4>
               <div className="space-y-3 text-slate-500">
-                {[
-                  "All",
-                  "Chicken",
-                  "Seafood",
-                  "Pizza",
-                  "Burger",
-                  "Dessert",
-                ].map((item) => (
+                {CATEGORIES.map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer hover:text-slate-800 transition-colors"
                   >
                     <Checkbox
                       id={item}
-                      defaultChecked={item === "All"}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      checked={selectedCategory === item}
+                      onCheckedChange={() => setSelectedCategory(item)}
+                      className="data-[state=checked]:bg-[#c94430] data-[state=checked]:border-[#c94430]"
                     />
                     <span className="leading-none">{item}</span>
                   </label>
@@ -148,18 +160,27 @@ export default function MenusPage() {
               </div>
             </div>
 
+            {/* Rating Filter (DIKEMBALIKAN) */}
             <div>
-              <h4 className="mb-3 font-semibold text-slate-700">Rating</h4>
+              <h4 className="mb-3 font-semibold text-slate-700">
+                Minimum Rating
+              </h4>
               <div className="space-y-3 text-slate-500">
                 {[5, 4, 3, 2, 1].map((rate) => (
                   <label
                     key={rate}
-                    className="flex items-center gap-3 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer hover:text-slate-800 transition-colors"
                   >
-                    <Checkbox className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                    <Checkbox
+                      checked={selectedRating === rate}
+                      onCheckedChange={(checked) =>
+                        setSelectedRating(checked ? rate : null)
+                      } // Jika uncheck, kembali ke null (semua rating)
+                      className="data-[state=checked]:bg-[#c94430] data-[state=checked]:border-[#c94430]"
+                    />
                     <span className="flex items-center gap-1 text-yellow-400">
                       {"★".repeat(rate)}
-                      <span className="text-slate-500 ml-1">{rate}</span>
+                      <span className="text-slate-500 ml-1">{rate} & up</span>
                     </span>
                   </label>
                 ))}
@@ -179,21 +200,31 @@ export default function MenusPage() {
               />
               <Input
                 type="text"
-                placeholder="Search for menu"
-                className="w-full rounded-xl border-slate-100 bg-slate-50 py-5 pl-10 pr-4 text-sm focus-visible:ring-primary/20 focus-visible:border-primary"
+                placeholder="Cari nama menu (Tekan Enter)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full rounded-xl border-slate-200 bg-slate-50 py-5 pl-10 pr-4 text-sm focus-visible:ring-[#c94430]/20 focus-visible:border-[#c94430]"
               />
             </div>
 
-            <Button className="rounded-xl bg-primary px-6 py-5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
+            <Button
+              onClick={handleSearch}
+              className="rounded-xl bg-[#c94430] px-6 py-5 text-sm font-semibold text-white hover:bg-[#b03a28]"
+            >
               Search
             </Button>
           </div>
 
           {/* Grid Menu */}
-          {menus.length === 0 ? (
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#c94430] border-t-transparent" />
+            </div>
+          ) : menus.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-slate-400">
               <Utensils size={36} />
-              <p className="mt-3 font-medium">Belum ada menu.</p>
+              <p className="mt-3 font-medium">Belum ada menu yang cocok.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -201,7 +232,7 @@ export default function MenusPage() {
                 <div
                   key={menu.id}
                   className="group cursor-pointer"
-                  onClick={() => openModal(menu)} // Buka modal saat kartu diklik
+                  onClick={() => openModal(menu)}
                 >
                   <div className="relative h-44 overflow-hidden rounded-2xl bg-slate-100">
                     {menu.image_url ? (
@@ -216,7 +247,7 @@ export default function MenusPage() {
                       </div>
                     )}
 
-                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-primary shadow-sm backdrop-blur-sm">
+                    <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#c94430] shadow-sm backdrop-blur-sm">
                       Manageable
                     </div>
 
@@ -226,8 +257,8 @@ export default function MenusPage() {
                         variant="secondary"
                         className="h-8 w-8 text-blue-600 hover:bg-blue-50 shadow-sm"
                         onClick={(e) => {
-                          e.stopPropagation(); // Mencegah klik menyebar ke kartu
-                          openModal(menu);
+                          e.stopPropagation();
+                          alert(`Fitur Edit Menu ID: ${menu.id}`);
                         }}
                       >
                         <Edit2 size={14} />
@@ -236,7 +267,10 @@ export default function MenusPage() {
                         size="icon"
                         variant="secondary"
                         className="h-8 w-8 text-red-600 hover:bg-red-50 shadow-sm"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert(`Fitur Hapus Menu ID: ${menu.id}`);
+                        }}
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -244,10 +278,10 @@ export default function MenusPage() {
                   </div>
 
                   <div className="mt-3">
-                    <h3 className="line-clamp-1 text-lg font-bold tracking-tight text-slate-900 group-hover:text-primary transition-colors">
+                    <h3 className="line-clamp-1 text-lg font-bold tracking-tight text-slate-900 group-hover:text-[#c94430] transition-colors">
                       {menu.name}
                     </h3>
-                    <p className="mt-0.5 text-xs font-semibold text-primary">
+                    <p className="mt-0.5 text-xs font-semibold text-[#c94430]">
                       {menu.category?.name || "Kategori"}
                     </p>
 
@@ -278,7 +312,7 @@ export default function MenusPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-xl bg-[#c94430]/10 flex items-center justify-center text-[#c94430]">
                   <ChefHat size={20} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -362,7 +396,7 @@ export default function MenusPage() {
                             <span className="font-medium text-slate-700">
                               {ing.name}
                             </span>
-                            <span className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md text-xs">
+                            <span className="font-bold text-[#c94430] bg-[#c94430]/10 px-2 py-1 rounded-md text-xs">
                               {Number(ing.pivot.quantity)} {ing.unit}
                             </span>
                           </li>
@@ -396,7 +430,7 @@ export default function MenusPage() {
                   <p className="font-medium text-slate-600">
                     Belum ada resep internal untuk menu ini.
                   </p>
-                  <Button className="mt-4 bg-primary hover:bg-primary-hover text-white rounded-xl">
+                  <Button className="mt-4 bg-[#c94430] hover:bg-[#b03a28] text-white rounded-xl">
                     <Plus size={16} className="mr-2" /> Buat Resep Baru
                   </Button>
                 </div>
@@ -412,7 +446,7 @@ export default function MenusPage() {
               >
                 Tutup
               </Button>
-              <Button className="bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold">
+              <Button className="bg-[#c94430] hover:bg-[#b03a28] text-white rounded-xl font-semibold">
                 <Edit2 size={16} className="mr-2" /> Edit Resep
               </Button>
             </div>

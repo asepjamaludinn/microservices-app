@@ -8,17 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ingredients', function (Blueprint $table) {
+        Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('unit');
-            $table->decimal('stock', 10, 2)->default(0);
+            $table->foreignId('order_id')->nullable()->constrained('orders')->onDelete('cascade');
+            $table->string('customer_name');
+            $table->integer('rating');
+            $table->text('comment');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('ingredients');
+        Schema::dropIfExists('reviews');
     }
 };

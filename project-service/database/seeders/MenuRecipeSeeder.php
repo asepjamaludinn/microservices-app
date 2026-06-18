@@ -10,7 +10,6 @@ class MenuRecipeSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Menu Dummy
         $menu = Menu::create([
             'category_id' => 1, 
             'user_id' => 1, 
@@ -22,7 +21,6 @@ class MenuRecipeSeeder extends Seeder
             'is_available' => true,
         ]);
 
-        // 2. Buat Resep untuk Menu tersebut
         $recipe = Recipe::create([
             'menu_id' => $menu->id,
             'prep_time' => 10,
@@ -31,15 +29,14 @@ class MenuRecipeSeeder extends Seeder
             'cost_price' => 15000,
         ]);
 
-        // 3. Attach Ingredients (Bahan Baku) ke Resep (Pivot Table)
         $recipe->ingredients()->attach([
-            1 => ['quantity' => 15],  // Bawang Putih 15 gram
-            2 => ['quantity' => 20],  // Bawang Merah 20 gram
-            3 => ['quantity' => 10],  // Cabai Merah 10 gram
-            5 => ['quantity' => 5],   // Garam 5 gram
-            7 => ['quantity' => 30],  // Minyak Goreng 30 ml
-            8 => ['quantity' => 25],  // Kecap Manis 25 ml
-            9 => ['quantity' => 2],   // Telur Ayam 2 pcs
+            1 => ['quantity' => 15],  
+            2 => ['quantity' => 20],  
+            3 => ['quantity' => 10],  
+            5 => ['quantity' => 5],   
+            7 => ['quantity' => 30],  
+            8 => ['quantity' => 25],  
+            9 => ['quantity' => 2],   
         ]);
     }
 }
