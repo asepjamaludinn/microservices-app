@@ -32,7 +32,7 @@ export function useReviewModal(userName?: string) {
     try {
       await createReview({
         order_id: reviewModal.orderId,
-        customer_name: userName, // TS Payload
+        customer_name: userName,
         rating,
         comment,
       });

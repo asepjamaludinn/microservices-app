@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import ReviewsFeature from "@/features/reviews/components/ReviewsFeature";
 
-export const metadata = {
-  title: "Customer Reviews | Admin Dashboard",
-};
+export const metadata = { title: "Customer Reviews | Admin Dashboard" };
 
 export default function ReviewsPage() {
-  return <ReviewsFeature />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReviewsFeature />
+    </Suspense>
+  );
 }

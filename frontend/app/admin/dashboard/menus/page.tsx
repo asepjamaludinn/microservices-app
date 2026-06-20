@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import MenusFeature from "@/features/menus/components/MenusFeature";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function MenusPage() {
-  return <MenusFeature />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MenusFeature />
+    </Suspense>
+  );
 }

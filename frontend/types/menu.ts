@@ -28,6 +28,7 @@ export type Menu = {
   price: string | number;
   image_url?: string | null;
   rating?: string | number;
+  is_available: boolean;
   category?: MenuCategory;
   recipe?: Recipe;
 };

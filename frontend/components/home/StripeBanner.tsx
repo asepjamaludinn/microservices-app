@@ -1,4 +1,16 @@
+"use client";
+
+import { usePublicMenus } from "@/hooks/use-public-menus";
+
 export default function StripeBanner() {
+  const { menus, loading } = usePublicMenus();
+  const topRatedMenus = [...menus]
+    .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+    .slice(0, 2);
+
+  const menu1 = topRatedMenus[0];
+  const menu2 = topRatedMenus[1];
+
   return (
     <section className="grid min-h-[520px] grid-cols-1 overflow-hidden md:grid-cols-2">
       {/* Left */}
@@ -6,57 +18,73 @@ export default function StripeBanner() {
         <div className="absolute inset-0 opacity-25 [background-image:radial-gradient(circle,#ffd48a_1.5px,transparent_1.5px)] [background-size:24px_24px]" />
 
         <div className="relative z-10">
-          <h2 className="mb-12 max-w-xl text-5xl font-black uppercase leading-[0.95] tracking-tighter md:text-6xl">
+          <h2 className="mb-12 max-w-xl text-5xl font-black uppercase leading-[0.95] tracking-tighter md:text-6xl text-white">
             Yumminess On <br />
             The Brain
           </h2>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="flex gap-5 rounded-2xl border-2 border-black bg-[#ffd49b] p-4 shadow-[6px_6px_0_#000]">
+            {/* Card 1 (Top 1 Menu) */}
+            <div className="flex gap-5 rounded-2xl border-2 border-black bg-[#ffd49b] p-4 shadow-[6px_6px_0_#000] flex-col xl:flex-row">
               <img
-                src="/images/placeholder-food.jpg"
-                alt="BiteBox favorite menu"
-                className="h-40 w-44 rounded-xl object-cover"
+                src={menu1?.image_url || "/images/placeholder-food.jpg"}
+                alt={menu1?.name || "BiteBox favorite menu"}
+                className="h-32 w-full xl:w-32 rounded-xl object-cover border-2 border-black/10"
               />
 
-              <div className="flex flex-col justify-between py-1">
+              <div className="flex flex-col justify-between py-1 w-full">
                 <div>
-                  <h3 className="text-2xl font-black uppercase leading-none">
-                    BiteBox <br />
-                    Favorite
+                  <h3 className="text-xl font-black uppercase leading-tight line-clamp-2">
+                    {menu1 ? menu1.name : "BiteBox Favorite"}
                   </h3>
-                  <p className="mt-3 text-base font-medium leading-snug">
-                    Fresh dishes made for your best mood.
+                  <p className="mt-2 text-xs font-semibold leading-snug text-slate-800 line-clamp-2">
+                    {menu1?.description ||
+                      "Fresh dishes made for your best mood."}
                   </p>
                 </div>
 
-                <span className="w-max rounded-lg bg-[#cf432f] px-6 py-2 text-sm font-black text-black shadow-[0_6px_0_rgba(207,67,47,0.55)]">
-                  Order
-                </span>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-sm font-black text-[#cf432f] flex items-center gap-1">
+                    ★ {menu1?.rating || "4.9"}
+                  </span>
+                  <a
+                    href="#menu"
+                    className="w-max rounded-lg bg-[#cf432f] px-4 py-1.5 text-xs font-black text-white shadow-[0_4px_0_rgba(207,67,47,0.55)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    Order
+                  </a>
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-5 rounded-2xl border-2 border-black bg-[#ffd49b] p-4 shadow-[6px_6px_0_#000]">
+            <div className="flex gap-5 rounded-2xl border-2 border-black bg-[#ffd49b] p-4 shadow-[6px_6px_0_#000] flex-col xl:flex-row">
               <img
-                src="/images/placeholder-food.jpg"
-                alt="BiteBox grill menu"
-                className="h-40 w-44 rounded-xl object-cover"
+                src={menu2?.image_url || "/images/placeholder-food.jpg"}
+                alt={menu2?.name || "BiteBox grill menu"}
+                className="h-32 w-full xl:w-32 rounded-xl object-cover border-2 border-black/10"
               />
 
-              <div className="flex flex-col justify-between py-1">
+              <div className="flex flex-col justify-between py-1 w-full">
                 <div>
-                  <h3 className="text-2xl font-black uppercase leading-none">
-                    Fresh <br />
-                    Meals
+                  <h3 className="text-xl font-black uppercase leading-tight line-clamp-2">
+                    {menu2 ? menu2.name : "Fresh Meals"}
                   </h3>
-                  <p className="mt-3 text-base font-medium leading-snug">
-                    Tasty, warm, and ready to enjoy.
+                  <p className="mt-2 text-xs font-semibold leading-snug text-slate-800 line-clamp-2">
+                    {menu2?.description || "Tasty, warm, and ready to enjoy."}
                   </p>
                 </div>
 
-                <span className="w-max rounded-lg bg-[#cf432f] px-6 py-2 text-sm font-black text-black shadow-[0_6px_0_rgba(207,67,47,0.55)]">
-                  Menu
-                </span>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-sm font-black text-[#cf432f] flex items-center gap-1">
+                    ★ {menu2?.rating || "4.8"}
+                  </span>
+                  <a
+                    href="#menu"
+                    className="w-max rounded-lg bg-[#cf432f] px-4 py-1.5 text-xs font-black text-white shadow-[0_4px_0_rgba(207,67,47,0.55)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    Menu
+                  </a>
+                </div>
               </div>
             </div>
           </div>

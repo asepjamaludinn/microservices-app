@@ -4,7 +4,7 @@ type Menu = {
   id: number;
   name: string;
   price: string | number;
-  image_url?: string;
+  image_url?: string | null;
   category?: { name: string };
 };
 

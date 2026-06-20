@@ -27,6 +27,11 @@ export type AnalyticsData = {
   revenue_chart?: RevenueChartItem[];
   category_chart?: CategoryChartItem[];
   orders_week_chart?: OrdersWeekChartItem[];
+  order_types?: {
+    dine_in: { total: number; percentage: number };
+    takeaway: { total: number; percentage: number };
+    online: { total: number; percentage: number };
+  };
 };
 
 export type DashboardOrderItem = {

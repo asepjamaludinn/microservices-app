@@ -1,10 +1,10 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ORDER_TABS } from "@/utils/order-formatters";
+import { ORDER_TABS, type OrderTab } from "@/utils/order-formatters";
 
 interface OrdersToolbarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: OrderTab;
+  setActiveTab: (tab: OrderTab) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }

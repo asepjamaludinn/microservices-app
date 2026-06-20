@@ -9,12 +9,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { STATUS_OPTIONS } from "../constants/table-options";
+import type { TableStatus } from "@/types/table";
 
 interface TablesToolbarProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   filterStatus: string;
-  setFilterStatus: (val: string) => void;
+  setFilterStatus: (val: TableStatus | "all_statuses") => void;
   filterArea: string;
   setFilterArea: (val: string) => void;
   uniqueAreas: string[];
@@ -51,7 +52,9 @@ export default function TablesToolbar({
         <div className="w-[160px]">
           <Select
             value={filterStatus}
-            onValueChange={(v) => setFilterStatus(v)}
+            onValueChange={(v) =>
+              setFilterStatus(v as TableStatus | "all_statuses")
+            }
           >
             <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-xl">
               <SelectValue placeholder="Status" />

@@ -1,7 +1,8 @@
 import type { PaginatedReviewResponse } from "@/types/review";
 
 type CreateReviewPayload = {
-  menu_id: number;
+  order_id?: number | null;
+  menu_id?: number | null;
   customer_name: string;
   rating: number;
   comment: string;
@@ -21,10 +22,13 @@ export async function getReviews(page = 1, search = "") {
     cache: "no-store",
   });
   const response = await safeJson<{ data: PaginatedReviewResponse }>(res);
+
   return {
     reviews: response.data.data,
     currentPage: response.data.current_page,
     totalPages: response.data.last_page,
+    totalItems: response.data.total || 0,
+    perPage: response.data.per_page || 10,
   };
 }
 
