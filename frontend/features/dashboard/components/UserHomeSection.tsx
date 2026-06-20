@@ -1,6 +1,11 @@
+"use client";
+
 import MenuList from "@/components/home/MenuList";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export default function UserHomeSection() {
+  const { user } = useCurrentUser();
+
   return (
     <div className="animate-in fade-in duration-500">
       <section className="relative overflow-hidden bg-[#fff4dc] px-6 pb-8 pt-10">
@@ -8,7 +13,7 @@ export default function UserHomeSection() {
 
         <div className="relative z-10 mx-auto max-w-7xl rounded-[2rem] border-2 border-black bg-white p-8 shadow-[8px_8px_0_#000]">
           <p className="text-sm font-black uppercase tracking-[0.25em] text-[#cf432f]">
-            Welcome Back
+            Welcome Back {user ? user.name : ""}
           </p>
 
           <h1 className="mt-3 text-4xl font-black uppercase leading-none tracking-tighter text-slate-950 md:text-6xl">

@@ -1,8 +1,10 @@
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface OrdersPaginationProps {
   currentPage: number;
   totalPages: number;
+  totalItems?: number;
+  perPage?: number;
   searchQuery: string;
   fetchOrders: (page: number, search: string) => void;
 }
@@ -10,32 +12,75 @@ interface OrdersPaginationProps {
 export default function OrdersPagination({
   currentPage,
   totalPages,
+  totalItems = 0,
+  perPage = 10,
   searchQuery,
   fetchOrders,
 }: OrdersPaginationProps) {
   if (totalPages <= 1) return null;
 
+  const safeCurrentPage = Number(currentPage) || 1;
+  const safeTotalPages = Number(totalPages) || 1;
+
+  const pages = Array.from({ length: safeTotalPages }, (_, i) => i + 1);
+
   return (
-    <div className="flex items-center justify-center gap-4 pt-4">
-      <Button
-        variant="outline"
-        onClick={() => fetchOrders(currentPage - 1, searchQuery)}
-        disabled={currentPage === 1}
-        className="rounded-xl border-slate-200 bg-white"
-      >
-        Previous
-      </Button>
-      <span className="text-sm font-semibold text-slate-500">
-        Halaman {currentPage} dari {totalPages}
-      </span>
-      <Button
-        variant="outline"
-        onClick={() => fetchOrders(currentPage + 1, searchQuery)}
-        disabled={currentPage === totalPages}
-        className="rounded-xl border-slate-200 bg-white"
-      >
-        Next
-      </Button>
+    <div className="border-t border-slate-100 bg-white px-6 py-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <span>Showing</span>
+
+          <div className="flex h-11 min-w-[68px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 font-semibold text-slate-700 shadow-sm">
+            {perPage}
+          </div>
+
+          <span>
+            out of{" "}
+            <span className="font-semibold text-slate-700">
+              {totalItems.toLocaleString()}
+            </span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            disabled={safeCurrentPage === 1}
+            onClick={() => fetchOrders(safeCurrentPage - 1, searchQuery)}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          {pages.map((page) => {
+            const isActive = safeCurrentPage === page;
+
+            return (
+              <button
+                key={`order-page-${page}`}
+                type="button"
+                onClick={() => fetchOrders(page, searchQuery)}
+                className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold transition ${
+                  isActive
+                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/25"
+                    : "border border-slate-100 bg-white text-slate-800 shadow-sm hover:bg-slate-50"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            disabled={safeCurrentPage === safeTotalPages}
+            onClick={() => fetchOrders(safeCurrentPage + 1, searchQuery)}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

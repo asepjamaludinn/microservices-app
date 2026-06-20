@@ -2,8 +2,9 @@ import type { Order, OrderStatus, PaginatedOrderResponse } from "@/types/order";
 
 export type CreateOrderPayload = {
   customer_name: string;
-  order_type: "dine_in" | "takeaway";
+  order_type: "dine_in" | "takeaway" | "online";
   table_number: string | null;
+  delivery_address?: string | null;
   payment_method: "cash" | "qris" | "card";
   items: {
     menu_id: number;

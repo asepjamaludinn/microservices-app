@@ -54,6 +54,14 @@ export default function OrderCard({
           {order.order_type.replace("_", " ")}
           {order.table_number && ` • Meja ${order.table_number}`}
         </p>
+        {order.order_type === "online" && order.delivery_address && (
+          <div className="mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-medium text-slate-600">
+            <span className="block font-bold text-slate-800 mb-0.5">
+              Alamat Pengiriman:
+            </span>
+            {order.delivery_address}
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 mb-5">

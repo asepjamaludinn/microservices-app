@@ -53,7 +53,8 @@ class OrderService
             $orderItemsData = [];
             $deductedItems = []; 
             
-            $tableId = $data['order_type'] === 'takeaway' ? null : ($data['table_id'] ?? null);
+            $tableId = in_array($data['order_type'], ['takeaway', 'online']) ? null : ($data['table_id'] ?? null);
+            $deliveryAddress = $data['order_type'] === 'online' ? ($data['delivery_address'] ?? null) : null;
             
             if ($tableId) {
                 $table = $this->tableRepo->findLockedById($tableId);
@@ -106,6 +107,7 @@ class OrderService
                 'customer_name' => $data['customer_name'],
                 'order_type' => $data['order_type'], 
                 'table_id' => $tableId, 
+                'delivery_address' => $deliveryAddress,
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
@@ -121,7 +123,7 @@ class OrderService
                 'action' => 'ORDER_CREATED',
                 'entity_type' => 'Order',
                 'entity_id' => $order->id,
-                'details' => json_encode(['total_amount' => $totalAmount, 'table_id' => $tableId])
+                'details' => json_encode(['total_amount' => $totalAmount, 'order_type' => $data['order_type']])
             ]);
 
             if (count($deductedItems) > 0) {

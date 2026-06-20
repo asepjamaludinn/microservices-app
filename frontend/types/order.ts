@@ -7,7 +7,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "unpaid" | "paid" | "refunded";
 
-export type OrderType = "dine_in" | "takeaway";
+export type OrderType = "dine_in" | "takeaway" | "online";
 
 export type OrderItem = {
   id: number;
@@ -26,6 +26,7 @@ export type Order = {
   customer_name: string;
   table_number: string | null;
   order_type: OrderType;
+  delivery_address: string | null;
   status: OrderStatus;
   payment_method: string;
   payment_status: PaymentStatus;

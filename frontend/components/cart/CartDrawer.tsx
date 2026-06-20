@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { ShoppingCart, X, Utensils, Minus, Plus, Trash2 } from "lucide-react";
+import {
+  ShoppingCart,
+  X,
+  Utensils,
+  Minus,
+  Plus,
+  Trash2,
+  MapPin,
+} from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useCheckoutAuth } from "@/hooks/use-checkout-auth";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -24,6 +32,8 @@ export default function CartDrawer() {
 
   const { user } = useCurrentUser();
   const { handleCheckout } = useCheckoutAuth();
+
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isCartOpen) return null;
@@ -38,13 +48,19 @@ export default function CartDrawer() {
 
     if (cart.length === 0 || isSubmitting) return;
 
+    if (deliveryAddress.trim() === "") {
+      toast.error("Alamat pengiriman wajib diisi untuk pesanan online!");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const payload: CreateOrderPayload = {
         customer_name: user.name || "Customer",
-        order_type: "takeaway",
+        order_type: "online",
         table_number: null,
+        delivery_address: deliveryAddress,
         payment_method: "cash",
         items: cart.map((item) => ({
           menu_id: item.menu.id,
@@ -56,8 +72,9 @@ export default function CartDrawer() {
       await createOrder(payload);
 
       clearCart?.();
+      setDeliveryAddress("");
       setIsCartOpen(false);
-      toast.success("Pesanan berhasil dibuat dan masuk ke admin.");
+      toast.success("Pesanan online berhasil dibuat! Menunggu kurir.");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Gagal membuat pesanan.",
@@ -79,25 +96,24 @@ export default function CartDrawer() {
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-3 text-2xl font-black uppercase tracking-tighter">
               <ShoppingCart size={28} />
-              Pesanan Saya
+              Pesanan Online
             </h2>
 
             <button
               type="button"
               onClick={() => setIsCartOpen(false)}
               className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-black bg-[#fff4dc] text-slate-950 shadow-[4px_4px_0_#000] transition hover:-translate-y-0.5"
-              aria-label="Tutup keranjang"
             >
               <X size={21} strokeWidth={3} />
             </button>
           </div>
 
           <p className="mt-3 text-sm font-semibold text-[#fff4dc]/80">
-            Cek ulang menu favoritmu sebelum checkout.
+            Pesanan ini akan diantar langsung ke lokasimu.
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {cart.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] border-2 border-black bg-white text-[#cf432f] shadow-[6px_6px_0_#000]">
@@ -150,7 +166,6 @@ export default function CartDrawer() {
                           type="button"
                           onClick={() => updateQuantity(item.menu.id, -1)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-950 transition hover:bg-red-50 hover:text-red-600"
-                          aria-label="Kurangi jumlah"
                         >
                           {item.quantity === 1 ? (
                             <Trash2 size={15} />
@@ -158,16 +173,13 @@ export default function CartDrawer() {
                             <Minus size={15} />
                           )}
                         </button>
-
                         <span className="w-10 text-center text-sm font-black text-slate-950">
                           {item.quantity}
                         </span>
-
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.menu.id, 1)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#cf432f] text-white transition hover:bg-[#b8321f]"
-                          aria-label="Tambah jumlah"
                         >
                           <Plus size={15} strokeWidth={3} />
                         </button>
@@ -181,13 +193,26 @@ export default function CartDrawer() {
         </div>
 
         {cart.length > 0 && (
-          <div className="border-t-2 border-black bg-white p-6">
-            <div className="mb-6 rounded-2xl border-2 border-black bg-[#fff4dc] p-5 shadow-[5px_5px_0_#000]">
+          <div className="border-t-2 border-black bg-white p-6 space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-black uppercase text-slate-700 flex items-center gap-1.5">
+                <MapPin size={16} className="text-[#cf432f]" />
+                Alamat Pengiriman
+              </label>
+              <textarea
+                rows={2}
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                placeholder="Masukkan alamat lengkap (Jalan, RT/RW, Patokan)..."
+                className="w-full resize-none rounded-2xl border-2 border-black bg-slate-50 p-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#cf432f]/20 focus-visible:border-[#cf432f]"
+              />
+            </div>
+
+            <div className="rounded-2xl border-2 border-black bg-[#fff4dc] p-5 shadow-[5px_5px_0_#000]">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-black uppercase text-slate-500">
                   Subtotal
                 </span>
-
                 <span className="text-2xl font-black text-slate-950">
                   Rp {subtotal.toLocaleString("id-ID")}
                 </span>
