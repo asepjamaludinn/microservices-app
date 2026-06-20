@@ -34,7 +34,7 @@ export default function UserDashboardFeature() {
   if (loading) return <UserDashboardLoading />;
 
   return (
-    <div className="min-h-screen bg-[#FFFDF9] text-slate-800 font-sans selection:bg-[#c94430] selection:text-white flex flex-col">
+    <div className="min-h-screen bg-[#fff4dc] text-slate-950 font-sans selection:bg-[#cf432f] selection:text-white flex flex-col">
       <UserDashboardNavbar
         user={user}
         cartLength={cart.length}

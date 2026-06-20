@@ -1,128 +1,210 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 import { ShoppingCart, X, Utensils, Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useCheckoutAuth } from "@/hooks/use-checkout-auth";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import {
+  createOrder,
+  type CreateOrderPayload,
+} from "@/services/orders.service";
 
 export default function CartDrawer() {
-  const { cart, isCartOpen, setIsCartOpen, updateQuantity, getSubtotal } =
-    useCartStore();
+  const {
+    cart,
+    isCartOpen,
+    setIsCartOpen,
+    updateQuantity,
+    getSubtotal,
+    clearCart,
+  } = useCartStore();
 
+  const { user } = useCurrentUser();
   const { handleCheckout } = useCheckoutAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isCartOpen) return null;
 
   const subtotal = getSubtotal();
 
+  const handleSubmitOrder = async () => {
+    if (!user) {
+      handleCheckout(() => setIsCartOpen(false));
+      return;
+    }
+
+    if (cart.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const payload: CreateOrderPayload = {
+        customer_name: user.name || "Customer",
+        order_type: "takeaway",
+        table_number: null,
+        payment_method: "cash",
+        items: cart.map((item) => ({
+          menu_id: item.menu.id,
+          quantity: item.quantity,
+          notes: item.notes || null,
+        })),
+      };
+
+      await createOrder(payload);
+
+      clearCart?.();
+      setIsCartOpen(false);
+      toast.success("Pesanan berhasil dibuat dan masuk ke admin.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal membuat pesanan.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in"
+        className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm animate-in fade-in"
         onClick={() => setIsCartOpen(false)}
       />
 
-      <div className="fixed top-0 right-0 w-full sm:w-[400px] h-full bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
-            <ShoppingCart className="text-[#c94430]" />
-            Pesanan Saya
-          </h2>
+      <aside className="fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l-2 border-black bg-[#fff4dc] shadow-[-8px_0_0_#000] animate-in slide-in-from-right duration-300 sm:w-[430px]">
+        <div className="border-b-2 border-black bg-[#cf432f] p-6 text-[#fff4dc]">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-3 text-2xl font-black uppercase tracking-tighter">
+              <ShoppingCart size={28} />
+              Pesanan Saya
+            </h2>
 
-          <button
-            onClick={() => setIsCartOpen(false)}
-            className="p-2 text-slate-400 hover:text-slate-800 bg-white rounded-full shadow-sm"
-            aria-label="Tutup keranjang"
-          >
-            <X size={20} />
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-black bg-[#fff4dc] text-slate-950 shadow-[4px_4px_0_#000] transition hover:-translate-y-0.5"
+              aria-label="Tutup keranjang"
+            >
+              <X size={21} strokeWidth={3} />
+            </button>
+          </div>
+
+          <p className="mt-3 text-sm font-semibold text-[#fff4dc]/80">
+            Cek ulang menu favoritmu sebelum checkout.
+          </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6">
           {cart.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
-              <ShoppingCart size={64} className="opacity-20" />
-              <p className="font-semibold">Keranjang masih kosong</p>
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] border-2 border-black bg-white text-[#cf432f] shadow-[6px_6px_0_#000]">
+                <ShoppingCart size={52} />
+              </div>
+
+              <h3 className="text-3xl font-black uppercase tracking-tighter text-slate-950">
+                Keranjang Kosong
+              </h3>
+
+              <p className="mt-3 max-w-xs font-semibold leading-relaxed text-slate-600">
+                Tambahkan menu favoritmu dulu sebelum melakukan checkout.
+              </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {cart.map((item) => (
-                <div key={item.menu.id} className="flex gap-4">
-                  <div className="relative w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden shrink-0">
-                    {item.menu.image_url ? (
-                      <Image
-                        src={item.menu.image_url}
-                        alt={item.menu.name}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <Utensils size={20} />
+                <article
+                  key={item.menu.id}
+                  className="rounded-[1.5rem] border-2 border-black bg-white p-4 shadow-[5px_5px_0_#000]"
+                >
+                  <div className="flex gap-4">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-black bg-[#fff4dc]">
+                      {item.menu.image_url ? (
+                        <Image
+                          src={item.menu.image_url}
+                          alt={item.menu.name}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[#cf432f]">
+                          <Utensils size={26} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h4 className="line-clamp-2 text-lg font-black uppercase leading-tight text-slate-950">
+                        {item.menu.name}
+                      </h4>
+
+                      <p className="mt-2 text-sm font-black text-[#cf432f]">
+                        Rp {Number(item.menu.price).toLocaleString("id-ID")}
+                      </p>
+
+                      <div className="mt-4 flex w-max items-center rounded-xl border-2 border-black bg-[#fff4dc] p-1 shadow-[3px_3px_0_#000]">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.menu.id, -1)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-950 transition hover:bg-red-50 hover:text-red-600"
+                          aria-label="Kurangi jumlah"
+                        >
+                          {item.quantity === 1 ? (
+                            <Trash2 size={15} />
+                          ) : (
+                            <Minus size={15} />
+                          )}
+                        </button>
+
+                        <span className="w-10 text-center text-sm font-black text-slate-950">
+                          {item.quantity}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.menu.id, 1)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#cf432f] text-white transition hover:bg-[#b8321f]"
+                          aria-label="Tambah jumlah"
+                        >
+                          <Plus size={15} strokeWidth={3} />
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 leading-tight mb-1">
-                      {item.menu.name}
-                    </h4>
-
-                    <p className="text-sm font-bold text-[#c94430] mb-3">
-                      Rp {Number(item.menu.price).toLocaleString("id-ID")}
-                    </p>
-
-                    <div className="flex items-center bg-slate-100 rounded-lg p-1 w-max">
-                      <button
-                        onClick={() => updateQuantity(item.menu.id, -1)}
-                        className="w-7 h-7 flex items-center justify-center bg-white rounded-md text-slate-600 shadow-sm hover:text-red-500"
-                        aria-label="Kurangi jumlah"
-                      >
-                        {item.quantity === 1 ? (
-                          <Trash2 size={14} />
-                        ) : (
-                          <Minus size={14} />
-                        )}
-                      </button>
-
-                      <span className="w-8 text-center text-sm font-bold text-slate-900">
-                        {item.quantity}
-                      </span>
-
-                      <button
-                        onClick={() => updateQuantity(item.menu.id, 1)}
-                        className="w-7 h-7 flex items-center justify-center bg-[#c94430] rounded-md text-white shadow-sm hover:bg-[#b03a28]"
-                        aria-label="Tambah jumlah"
-                      >
-                        <Plus size={14} />
-                      </button>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}
         </div>
 
         {cart.length > 0 && (
-          <div className="p-6 border-t border-slate-100 bg-slate-50">
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-slate-500 font-semibold">Subtotal</span>
-              <span className="text-2xl font-black text-slate-900">
-                Rp {subtotal.toLocaleString("id-ID")}
-              </span>
+          <div className="border-t-2 border-black bg-white p-6">
+            <div className="mb-6 rounded-2xl border-2 border-black bg-[#fff4dc] p-5 shadow-[5px_5px_0_#000]">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black uppercase text-slate-500">
+                  Subtotal
+                </span>
+
+                <span className="text-2xl font-black text-slate-950">
+                  Rp {subtotal.toLocaleString("id-ID")}
+                </span>
+              </div>
             </div>
 
             <button
-              onClick={() => handleCheckout(() => setIsCartOpen(false))}
-              className="w-full bg-[#c94430] hover:bg-[#b03a28] text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-[#c94430]/30 transition-transform active:scale-95"
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleSubmitOrder}
+              className="w-full rounded-2xl border-2 border-black bg-[#cf432f] py-4 text-lg font-black uppercase text-[#fff4dc] shadow-[6px_6px_0_#000] transition hover:-translate-y-1 hover:bg-[#b8321f] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Checkout Sekarang
+              {isSubmitting ? "Memproses..." : "Checkout Sekarang"}
             </button>
           </div>
         )}
-      </div>
+      </aside>
     </>
   );
 }
