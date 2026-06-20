@@ -16,22 +16,17 @@ class ReservationController extends Controller
         $this->reservationService = $reservationService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $reservations = $this->reservationService->getAllReservations();
+        $search = $request->query('search');
+        $reservations = $this->reservationService->getAllReservations($search);
         return $this->successResponse(ReservationResource::collection($reservations)->response()->getData(true), 'Data reservasi berhasil diambil.');
     }
-
+    
     public function store(StoreReservationRequest $request)
     {
         $reservation = $this->reservationService->createReservation($request->validated());
         return $this->successResponse(new ReservationResource($reservation), 'Reservasi berhasil dibuat.', 201);
-    }
-
-    public function show($id)
-    {
-        $reservation = $this->reservationService->getReservationById($id);
-        return $this->successResponse(new ReservationResource($reservation), 'Detail reservasi berhasil diambil.');
     }
 
     public function confirm($id)

@@ -1,7 +1,7 @@
-import type { Review, PaginatedReviewResponse } from "@/types/review";
+import type { PaginatedReviewResponse } from "@/types/review";
 
 type CreateReviewPayload = {
-  order_id: number;
+  menu_id: number;
   customer_name: string;
   rating: number;
   comment: string;

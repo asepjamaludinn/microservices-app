@@ -43,7 +43,6 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     // Transaksi & POS
     Route::get('orders', [OrderController::class, 'index']); 
     Route::patch('orders/{id}/status', [OrderController::class, 'updateStatus']); 
-    Route::patch('orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']); 
 
     // Manajemen Meja
     Route::get('tables', [TableController::class, 'index']);
@@ -51,19 +50,17 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     Route::patch('tables/{id}/status', [TableController::class, 'updateStatus']);
     Route::delete('tables/{id}', [TableController::class, 'destroy']); 
 
+    // Manajemen Reservasi
     Route::get('reservations', [ReservationController::class, 'index']);
     Route::post('reservations', [ReservationController::class, 'store']);
-    Route::get('reservations/{id}', [ReservationController::class, 'show']);
     Route::patch('reservations/{id}/confirm', [ReservationController::class, 'confirm']);
     Route::patch('reservations/{id}/cancel', [ReservationController::class, 'cancel']);
     Route::patch('reservations/{id}/complete', [ReservationController::class, 'complete']);
 
+    // Manajemen Pembayaran
     Route::get('payments', [PaymentController::class, 'index']);
-    Route::get('payments/{id}', [PaymentController::class, 'show']);
-    Route::get('orders/{id}/payment', [PaymentController::class, 'showByOrder']);
     Route::post('orders/{id}/pay', [PaymentController::class, 'store']);
     Route::post('payments/{id}/refund', [PaymentController::class, 'refund']);
-
     
     // Manajemen Inventaris 
     Route::get('inventory', [InventoryController::class, 'index']);
@@ -72,5 +69,6 @@ Route::middleware(['jwt.role:admin'])->group(function () {
     Route::delete('inventory/{id}', [InventoryController::class, 'destroy']); 
     Route::post('inventory/{id}/stock', [InventoryController::class, 'updateStock']); 
 
+    // Audit Logs
     Route::get('audit-logs', [AuditLogController::class, 'index']);
 });

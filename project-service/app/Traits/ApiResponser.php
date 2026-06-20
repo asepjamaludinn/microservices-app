@@ -13,6 +13,12 @@ trait ApiResponser
         ], $code);
     }
 
+    protected function paginatedResponse($resourceCollection, $message = null)
+    {
+        $data = $resourceCollection->response()->getData(true);
+        return $this->successResponse($data, $message);
+    }
+
     protected function errorResponse($message, $code)
     {
         return response()->json([

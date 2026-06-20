@@ -11,11 +11,11 @@ use Carbon\Carbon;
 
 class AnalyticsRepository
 {
-    public function getTodayOrderCount($today) { return Order::whereDate('created_at', $today)->count(); }
-    public function getTodayRevenue($today) { return Order::whereDate('created_at', $today)->where('payment_status', 'paid')->sum('total_amount'); }
-    public function getThisMonthRevenue($startOfMonth) { return Order::where('created_at', '>=', $startOfMonth)->where('payment_status', 'paid')->sum('total_amount'); }
-    public function getOrdersInProgressCount() { return Order::whereIn('status', ['pending', 'cooking'])->count(); }
-    public function getCountByStatus($status) { return Order::where('status', $status)->count(); }
+    public function getTotalOrderCount() { return Order::count(); }
+    public function getTotalRevenue() { return Order::where('payment_status', 'paid')->sum('total_amount'); }
+    public function getTotalCustomers() { return Order::distinct('customer_name')->count('customer_name'); }
+    
+    public function getOrdersInProgressCount() { return Order::whereIn('status', ['pending', 'cooking'])->count(); }    
     public function getTotalTables() { return Table::count(); }
     public function getOccupiedTablesCount() { return Table::where('status', 'in_use')->count(); }
 
@@ -23,6 +23,14 @@ class AnalyticsRepository
     {
         return Order::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
+            ->groupBy('date')->orderBy('date', 'ASC')->get();
+    }
+
+    public function getRevenueLast7Days()
+    {
+        return Order::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as income'))
+            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
+            ->where('payment_status', 'paid')
             ->groupBy('date')->orderBy('date', 'ASC')->get();
     }
 
@@ -49,5 +57,13 @@ class AnalyticsRepository
     {
         return Review::select('customer_name as customer', 'rating', 'comment', 'created_at')
             ->latest()->take(3)->get();
+    }
+
+    public function getOrderTypesCount()
+    {
+        return Order::select('order_type', DB::raw('count(*) as count'))
+            ->groupBy('order_type')
+            ->pluck('count', 'order_type')
+            ->toArray();
     }
 }

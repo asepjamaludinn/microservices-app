@@ -19,9 +19,19 @@ class PaymentRepository
         $number = $lastPayment ? intval(substr($lastPayment->receipt_number, -4)) + 1 : 1;
         return $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
     }
-    public function getAllPaginated($perPage = 15)
+
+    public function getAllPaginated($perPage = 15, $search = null)
     {
-        return Payment::with('order.customer_name')->orderBy('paid_at', 'desc')->paginate($perPage);
+        $query = Payment::with('order')->orderBy('paid_at', 'desc');
+
+        if ($search) {
+            $query->where('receipt_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('order', function ($q) use ($search) {
+                      $q->where('customer_name', 'like', '%' . $search . '%');
+                  });
+        }
+
+        return $query->paginate($perPage);
     }
 
     public function findById($id)

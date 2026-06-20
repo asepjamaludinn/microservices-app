@@ -18,7 +18,10 @@ class ReviewController extends Controller
 
     public function index(Request $request)
     {
-        $reviews = $this->reviewService->getAllReviews($request->query('per_page', 10));
+        $reviews = $this->reviewService->getAllReviews(
+            $request->query('per_page', 10),
+            $request->query('search')
+        );
         return $this->successResponse(ReviewResource::collection($reviews)->response()->getData(true), 'Daftar ulasan berhasil diambil.');
     }
 

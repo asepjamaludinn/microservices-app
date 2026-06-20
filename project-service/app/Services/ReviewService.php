@@ -3,38 +3,41 @@
 namespace App\Services;
 
 use App\Repositories\ReviewRepository;
-use App\Repositories\OrderRepository;
-use Illuminate\Support\Facades\Gate;
+use App\Repositories\MenuRepository;
+
 
 class ReviewService
 {
     protected $reviewRepo;
-    protected $orderRepo;
+    protected $menuRepo;
 
-    public function __construct(ReviewRepository $reviewRepo, OrderRepository $orderRepo)
+    public function __construct(ReviewRepository $reviewRepo, MenuRepository $menuRepo)
     {
         $this->reviewRepo = $reviewRepo;
-        $this->orderRepo = $orderRepo;
+        $this->menuRepo = $menuRepo;
     }
 
-    public function getAllReviews($perPage = 10)
+    public function getAllReviews($perPage = 10, $search = null)
     {
-        return $this->reviewRepo->getPaginatedReviews($perPage);
+        return $this->reviewRepo->getPaginatedReviews($perPage, $search);
     }
 
     public function createReview(array $data, $authUserId)
     {
-        $order = $this->orderRepo->findById($data['order_id']);
+        $menu = $this->menuRepo->findById($data['menu_id']);
 
-        Gate::authorize('review', $order);
-
-        if ($order->status !== 'completed') {
-            throw new \Exception('Anda hanya dapat mengulas pesanan yang sudah selesai.', 400);
-        }
-        if ($this->reviewRepo->existsForOrder($order->id)) {
-            throw new \Exception('Anda sudah memberikan ulasan untuk pesanan ini.', 400);
+        $customerName = auth()->user()->name ?? 'Guest'; 
+        
+        if ($this->reviewRepo->existsForMenuAndCustomer($menu->id, $customerName)) {
+            throw new \Exception('Anda sudah memberikan ulasan untuk menu ini.', 400);
         }
 
-        return $this->reviewRepo->create($data);
+       $data['customer_name'] = $customerName;
+        $review = $this->reviewRepo->create($data);
+
+        $avgRating = $menu->reviews()->avg('rating');
+        $this->menuRepo->update($menu, ['rating' => round($avgRating, 1)]);
+
+        return $review->load('menu.category');
     }
 }

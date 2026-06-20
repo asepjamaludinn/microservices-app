@@ -1,4 +1,4 @@
-import POSFeature from "@/features/orders/components/POSFeature";
+import POSFeature from "@/features/pos/components/POSFeature";
 
 export const metadata = {
   title: "POS | Admin Dashboard",

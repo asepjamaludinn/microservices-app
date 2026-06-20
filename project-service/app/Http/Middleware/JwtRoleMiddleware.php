@@ -18,15 +18,18 @@ class JwtRoleMiddleware
             $payload = JWTAuth::parseToken()->getPayload();
             $userId = $payload->get('sub');
             $userRole = $payload->get('role');
+            $userName = $payload->get('name'); 
 
             $request->attributes->add([
                 'auth_user_id' => $userId,
                 'auth_user_role' => $userRole
             ]);
 
+           
             $user = new GenericUser([
                 'id' => $userId,
                 'role' => $userRole,
+                'name' => $userName,
             ]);
             Auth::setUser($user);
 

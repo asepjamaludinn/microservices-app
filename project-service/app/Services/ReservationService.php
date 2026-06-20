@@ -17,9 +17,9 @@ class ReservationService
         $this->tableRepo = $tableRepo;
     }
 
-    public function getAllReservations()
+    public function getAllReservations($search = null)
     {
-        return $this->reservationRepo->getAllPaginated();
+        return $this->reservationRepo->getAllPaginated(15, $search);
     }
 
     public function createReservation(array $data)
@@ -34,11 +34,6 @@ class ReservationService
             $reservation = $this->reservationRepo->create($data);
             return $reservation->load('table');
         });
-    }
-
-   public function getReservationById($id)
-    {
-        return $this->reservationRepo->findById($id);
     }
 
     public function confirm($id)

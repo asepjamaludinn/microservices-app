@@ -9,10 +9,10 @@ class Review extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'customer_name', 'rating', 'comment'];
+    protected $fillable = ['menu_id', 'customer_name', 'rating', 'comment'];
 
-    public function order()
+    public function menu()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Menu::class);
     }
 }

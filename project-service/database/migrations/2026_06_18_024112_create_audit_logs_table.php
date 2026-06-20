@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable(); 
+            $table->string('user_name')->nullable();
             $table->string('action'); 
             $table->string('entity_type')->nullable();
             $table->unsignedBigInteger('entity_id')->nullable(); 

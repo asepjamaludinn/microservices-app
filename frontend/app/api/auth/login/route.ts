@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getAuthServiceUrl } from "@/lib/server-auth";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const authUrl = process.env.AUTH_SERVICE_URL || "http://127.0.0.1:8001";
+    const authUrl = getAuthServiceUrl();
 
     const backendResponse = await fetch(`${authUrl}/api/login`, {
       method: "POST",

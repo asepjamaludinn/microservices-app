@@ -6,17 +6,20 @@ use App\Models\Review;
 
 class ReviewRepository
 {
-    public function getPaginatedReviews($perPage = 10)
+  public function getPaginatedReviews($perPage = 10, $search = null)
     {
-        return Review::latest()->paginate($perPage);
-    }
 
-    public function getRecentReviews($limit = 3)
-    {
-        return Review::select('customer_name as customer', 'rating', 'comment', 'created_at')
-            ->latest()
-            ->take($limit)
-            ->get();
+        $query = Review::with('menu.category')->latest();
+
+        if ($search) {
+            $query->where('customer_name', 'like', '%' . $search . '%')
+                  ->orWhere('comment', 'like', '%' . $search . '%')
+                  ->orWhereHas('menu', function($q) use ($search) {
+                      $q->where('name', 'like', '%' . $search . '%');
+                  });
+        }
+
+        return $query->paginate($perPage);
     }
 
     public function findById($id)
@@ -24,9 +27,11 @@ class ReviewRepository
         return Review::findOrFail($id);
     }
 
-    public function existsForOrder($orderId)
+   public function existsForMenuAndCustomer($menuId, $customerName)
     {
-        return Review::where('order_id', $orderId)->exists();
+        return Review::where('menu_id', $menuId)
+                     ->where('customer_name', $customerName)
+                     ->exists();
     }
 
     public function create(array $data)

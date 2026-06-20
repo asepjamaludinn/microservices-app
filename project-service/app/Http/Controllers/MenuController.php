@@ -22,10 +22,10 @@ class MenuController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $menus = $this->menuService->getMenus($request->all());
-        return $this->successResponse(MenuResource::collection($menus)->response()->getData(true), 'Katalog menu berhasil diambil.');
-    }
+{
+    $menus = $this->menuService->getMenus($request->all());
+    return $this->paginatedResponse(MenuResource::collection($menus), 'Katalog menu berhasil diambil.');
+}
 
     public function getCategories()
     {
@@ -66,10 +66,11 @@ class MenuController extends Controller
     }
 
     public function getInternalRecipes(Request $request)
-    {
-        $recipes = $this->menuService->getInternalRecipes($request->all());
-        return $this->successResponse(MenuResource::collection($recipes), 'Data operasional menu berhasil diambil.');
-    }
+{
+    $recipes = $this->menuService->getInternalRecipes($request->all());
+    return $this->successResponse(MenuResource::collection($recipes), 'Data operasional menu berhasil diambil.');
+}
+    
 
     public function getIngredients()
     {

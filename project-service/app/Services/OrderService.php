@@ -7,6 +7,7 @@ use App\Repositories\MenuRepository;
 use App\Repositories\TableRepository;
 use App\Repositories\InventoryRepository;
 use App\Repositories\AuditLogRepository;
+use App\Repositories\PaymentRepository; 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -17,19 +18,22 @@ class OrderService
     protected $tableRepo;
     protected $inventoryRepo;
     protected $auditLogRepo;
+    protected $paymentRepo; 
 
     public function __construct(
         OrderRepository $orderRepo, 
         MenuRepository $menuRepo, 
         TableRepository $tableRepo, 
         InventoryRepository $inventoryRepo,
-        AuditLogRepository $auditLogRepo
+        AuditLogRepository $auditLogRepo,
+        PaymentRepository $paymentRepo 
     ) {
         $this->orderRepo = $orderRepo;
         $this->menuRepo = $menuRepo;
         $this->tableRepo = $tableRepo;
         $this->inventoryRepo = $inventoryRepo;
         $this->auditLogRepo = $auditLogRepo;
+        $this->paymentRepo = $paymentRepo;
     }
 
     public function getAllOrders(array $filters)
@@ -144,8 +148,8 @@ class OrderService
             $oldStatus = $order->status;
 
             if (in_array($oldStatus, ['completed', 'cancelled'])) {
-            throw new \Exception("Pesanan yang sudah berstatus '{$oldStatus}' tidak dapat diubah lagi.");
-        }
+                throw new \Exception("Pesanan yang sudah berstatus '{$oldStatus}' tidak dapat diubah lagi.");
+            }
             
             if (in_array($newStatus, ['completed', 'cancelled'])) {
                 if ($order->table_id && $order->table) {
@@ -155,6 +159,7 @@ class OrderService
 
             if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
                 $refundedItems = [];
+
                 foreach ($order->items as $item) {
                     if ($recipe = $item->menu->recipe) {
                         foreach ($recipe->ingredients as $ingredient) {
@@ -171,6 +176,17 @@ class OrderService
 
                 if ($order->payment_status === 'paid') {
                     $this->orderRepo->update($order, ['payment_status' => 'refunded']);
+                    
+                    $payment = $this->paymentRepo->getByOrderId($order->id);
+                    if ($payment) {
+                        $this->auditLogRepo->create([
+                            'user_id' => $authUserId,
+                            'action' => 'PAYMENT_REFUNDED',
+                            'entity_type' => 'Payment',
+                            'entity_id' => $payment->id,
+                            'details' => json_encode(['receipt_number' => $payment->receipt_number, 'refunded_stock' => $refundedItems])
+                        ]);
+                    }
                 }
 
                 if (count($refundedItems) > 0) {
@@ -192,37 +208,6 @@ class OrderService
                 'entity_type' => 'Order',
                 'entity_id' => $order->id,
                 'details' => json_encode(['from' => $oldStatus, 'to' => $newStatus])
-            ]);
-
-            return $order;
-        });
-    }
-
-    public function updatePaymentStatus($id, $newPaymentStatus, $authUserId)
-    {
-        return DB::transaction(function () use ($id, $newPaymentStatus, $authUserId) {
-            $order = $this->orderRepo->findById($id);
-            
-            Gate::authorize('update', $order);
-
-            $oldPaymentStatus = $order->payment_status;
-
-            if ($oldPaymentStatus === 'refunded') {
-                throw new \Exception("Pesanan yang sudah di-refund tidak dapat diubah kembali.");
-            }
-            
-            if ($oldPaymentStatus === 'paid' && $newPaymentStatus === 'unpaid') {
-                throw new \Exception("Pesanan yang sudah dibayar tidak dapat dikembalikan menjadi belum dibayar.");
-            }
-
-            $this->orderRepo->update($order, ['payment_status' => $newPaymentStatus]);
-
-            $this->auditLogRepo->create([
-                'user_id' => $authUserId,
-                'action' => 'PAYMENT_STATUS_UPDATED',
-                'entity_type' => 'Order',
-                'entity_id' => $order->id,
-                'details' => json_encode(['from' => $oldPaymentStatus, 'to' => $newPaymentStatus])
             ]);
 
             return $order;

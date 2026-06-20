@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\PaymentRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\AuditLogRepository;
+use App\Services\OrderService; 
 use Illuminate\Support\Facades\DB;
 
 class PaymentService
@@ -12,18 +13,28 @@ class PaymentService
     protected $paymentRepo;
     protected $orderRepo;
     protected $auditLogRepo;
+    protected $orderService; 
 
-    public function __construct(PaymentRepository $paymentRepo, OrderRepository $orderRepo, AuditLogRepository $auditLogRepo)
-    {
+    public function __construct(
+        PaymentRepository $paymentRepo, 
+        OrderRepository $orderRepo, 
+        AuditLogRepository $auditLogRepo,
+        OrderService $orderService 
+    ) {
         $this->paymentRepo = $paymentRepo;
         $this->orderRepo = $orderRepo;
         $this->auditLogRepo = $auditLogRepo;
+        $this->orderService = $orderService;
     }
 
     public function processPayment($orderId, $amountPaid, $authUserId)
     {
         return DB::transaction(function () use ($orderId, $amountPaid, $authUserId) {
             $order = $this->orderRepo->findById($orderId, ['table']);
+
+            if ($order->status === 'cancelled') {
+                throw new \Exception("Pesanan yang sudah dibatalkan tidak dapat dibayar.");
+            }
 
             if ($order->payment_status === 'paid') {
                 throw new \Exception("Pesanan ini sudah dibayar.");
@@ -45,7 +56,7 @@ class PaymentService
 
             $this->orderRepo->update($order, [
                 'payment_status' => 'paid',
-                'status' => $order->status === 'pending' ? 'ready' : $order->status // Auto update status operasional jika diperlukan
+                'status' => $order->status === 'pending' ? 'ready' : $order->status 
             ]);
 
             $this->auditLogRepo->create([
@@ -63,7 +74,10 @@ class PaymentService
             return $payment->load('order');
         });
     }
-    public function getAllPayments() { return $this->paymentRepo->getAllPaginated(); }
+
+    public function getAllPayments($search = null) { 
+        return $this->paymentRepo->getAllPaginated(15, $search); 
+    }
     
     public function getPaymentById($id) { return $this->paymentRepo->findById($id); }
     
@@ -77,46 +91,13 @@ class PaymentService
     {
         return DB::transaction(function () use ($paymentId, $authUserId) {
             $payment = $this->paymentRepo->findById($paymentId);
-            $order = $this->orderRepo->findById($payment->order_id, ['items.menu.recipe.ingredients']);
+            $order = $this->orderRepo->findById($payment->order_id);
 
             if ($order->payment_status === 'refunded') {
                 throw new \Exception("Pembayaran ini sudah di-refund sebelumnya.");
             }
 
-            // Kembalikan stok bahan baku (menggunakan logika yang sama saat order cancelled)
-            $refundedItems = [];
-            foreach ($order->items as $item) {
-                if ($recipe = $item->menu->recipe) {
-                    foreach ($recipe->ingredients as $ingredient) {
-                        $qtyToRefund = $ingredient->pivot->quantity * $item->quantity;
-                        $lockedIngredient = app(\App\Repositories\InventoryRepository::class)->findLockedById($ingredient->id);
-                        if ($lockedIngredient) {
-                            $lockedIngredient->increment('stock', $qtyToRefund);
-                            $refundedItems[] = "{$lockedIngredient->name} (+{$qtyToRefund})";
-                        }
-                    }
-                }
-            }
-
-            // Update status pembayaran di Order
-            $this->orderRepo->update($order, [
-                'payment_status' => 'refunded',
-                'status' => 'cancelled' // Otomatis batalkan pesanan operasional
-            ]);
-
-            // Jika ada meja yang terkait, set kembali menjadi available
-            if ($order->table_id) {
-                $table = app(\App\Repositories\TableRepository::class)->findLockedById($order->table_id);
-                app(\App\Repositories\TableRepository::class)->update($table, ['status' => 'available']);
-            }
-
-            $this->auditLogRepo->create([
-                'user_id' => $authUserId,
-                'action' => 'PAYMENT_REFUNDED',
-                'entity_type' => 'Payment',
-                'entity_id' => $payment->id,
-                'details' => json_encode(['receipt_number' => $payment->receipt_number, 'refunded_stock' => $refundedItems])
-            ]);
+            $this->orderService->updateOrderStatus($order->id, 'cancelled', $authUserId);
 
             return $payment;
         });

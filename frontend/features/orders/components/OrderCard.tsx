@@ -17,6 +17,7 @@ type OrderCardProps = {
   onChangeStatus: (orderId: number, status: OrderStatus) => void;
   onPrint: (order: Order) => void;
 };
+
 export default function OrderCard({
   order,
   isProcessingAction,
@@ -36,7 +37,6 @@ export default function OrderCard({
             {formatTime(order.created_at)}
           </div>
         </div>
-
         <div className="flex flex-col items-end gap-2">
           <StatusBadge status={order.status} />
           <PaymentBadge status={order.payment_status} />
@@ -47,11 +47,9 @@ export default function OrderCard({
         <h3 className="text-xl font-bold text-slate-900 leading-tight">
           {order.customer_name}
         </h3>
-
         <div className="mt-1 text-xs font-bold text-[#c94430]">
           {formatOrderNumber(order.id)}
         </div>
-
         <p className="mt-1 text-sm text-slate-500">
           {order.order_type.replace("_", " ")}
           {order.table_number && ` • Meja ${order.table_number}`}
@@ -65,14 +63,12 @@ export default function OrderCard({
               <p className="font-semibold text-slate-700">
                 {item.quantity}x {item.menu.name}
               </p>
-
               {item.notes && (
                 <p className="text-xs text-red-500 font-medium truncate">
                   Note: {item.notes}
                 </p>
               )}
             </div>
-
             <div className="text-sm font-bold text-slate-900">
               {formatCurrency(item.subtotal)}
             </div>
@@ -94,12 +90,10 @@ export default function OrderCard({
           <div className="flex gap-2">
             <Button
               onClick={() => onOpenDetail(order)}
-              // className ini diganti jadi solid background gelap dengan teks putih
               className="flex-1 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-white shadow-sm"
             >
               Details
             </Button>
-
             {order.status !== "completed" && order.status !== "cancelled" && (
               <Button
                 disabled={isProcessingAction}
@@ -111,7 +105,6 @@ export default function OrderCard({
               </Button>
             )}
           </div>
-
           <div className="flex gap-2">
             {order.payment_status === "unpaid" &&
               order.status !== "cancelled" && (
@@ -123,7 +116,6 @@ export default function OrderCard({
                   Pay Bill
                 </Button>
               )}
-
             {order.status !== "completed" &&
               order.status !== "cancelled" &&
               order.payment_status === "paid" && (
@@ -135,7 +127,6 @@ export default function OrderCard({
                   Set Completed
                 </Button>
               )}
-
             {order.status === "completed" &&
               order.payment_status === "paid" && (
                 <Button

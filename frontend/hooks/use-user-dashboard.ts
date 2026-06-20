@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Order } from "@/types/order";
 import { getMyOrders } from "@/services/user-dashboard.service";
-import {
-  getCurrentUser,
-  logoutUser,
-  type CurrentUser,
-} from "@/services/auth.service";
+import { getCurrentUser, type CurrentUser } from "@/services/auth.service";
+import { useLogout } from "@/hooks/use-logout";
 
 export function useUserDashboard() {
   const router = useRouter();
+  const { handleLogout } = useLogout("/login");
 
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -34,11 +32,6 @@ export function useUserDashboard() {
 
     fetchDashboardData();
   }, [router]);
-
-  const handleLogout = async () => {
-    await logoutUser();
-    router.push("/login");
-  };
 
   return {
     user,

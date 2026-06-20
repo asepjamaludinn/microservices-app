@@ -9,10 +9,20 @@ export function useCheckoutAuth() {
 
   const handleCheckout = async (afterCheck?: () => void) => {
     try {
-      await getCurrentUser();
+      const response = await getCurrentUser();
+      const user = response.user;
+
+      if (user.role === "admin") {
+        toast.error(
+          "Anda sedang login sebagai Admin. Silakan logout admin atau login sebagai user.",
+        );
+        router.push("/admin/dashboard");
+        return;
+      }
+
       router.push("/dashboard");
     } catch {
-      toast.error("Silakan Login terlebih dahulu untuk melanjutkan pesanan.");
+      toast.error("Silakan login terlebih dahulu untuk melanjutkan pesanan.");
       router.push("/login");
     } finally {
       afterCheck?.();

@@ -16,12 +16,13 @@ class AuditLogController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $logs = $this->auditLogService->getLogs(
-            $request->query('entity_type'), 
-            $request->query('per_page', 20)
-        );
-        
-        return $this->successResponse(AuditLogResource::collection($logs)->response()->getData(true), 'Data riwayat audit berhasil diambil.');
-    }
+{
+    $logs = $this->auditLogService->getLogs(
+        $request->query('entity_type'), 
+        $request->query('per_page', 20),
+        $request->query('search')
+    );
+    
+    return $this->paginatedResponse(AuditLogResource::collection($logs), 'Data riwayat audit berhasil diambil.');
+}
 }

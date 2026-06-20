@@ -4,7 +4,7 @@ import { getPaymentLabel, getStatusLabel } from "@/utils/order-formatters";
 export function StatusBadge({ status }: { status: OrderStatus }) {
   const classNameMap: Record<OrderStatus, string> = {
     completed: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    cancelled: "bg-red-500 text-white border-red-600", // <-- Diganti ke warna merah dan putih
+    cancelled: "bg-red-500 text-white border-red-600",
     ready: "bg-blue-50 text-blue-600 border-blue-100",
     cooking: "bg-orange-50 text-orange-600 border-orange-100",
     pending: "bg-amber-50 text-amber-600 border-amber-100",

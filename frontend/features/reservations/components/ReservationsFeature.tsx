@@ -1,32 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  CalendarRange,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  User,
-  Phone,
-  Search,
-  Users,
-} from "lucide-react";
 import toast from "react-hot-toast";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useReservations } from "@/hooks/use-reservations";
-import { getTables } from "@/services/tables.service";
-import { RestaurantTable } from "@/types/table";
-import { formatDateTime } from "@/utils/date-formatters";
+import { useReservationFormModal } from "../hooks/use-reservation-form-modal";
+
+import ReservationsHeader from "./ReservationsHeader";
+import ReservationsTable from "./ReservationsTable";
+import ReservationsTableSkeleton from "./ReservationsTableSkeleton";
+import ReservationsEmptyState from "./ReservationsEmptyState";
+import ReservationFormModal from "./ReservationFormModal";
 
 export default function ReservationsFeature() {
   const {
@@ -39,41 +21,16 @@ export default function ReservationsFeature() {
     changeStatus,
   } = useReservations();
 
-  const [tables, setTables] = useState<RestaurantTable[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    table_id: "",
-    customer_name: "",
-    contact_number: "",
-    reservation_time: "",
-    guest_count: "",
-  });
-
-  useEffect(() => {
-    getTables().then(setTables).catch(console.error);
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await addReservation({
-        ...formData,
-        table_id: Number(formData.table_id),
-        guest_count: Number(formData.guest_count),
-      });
-      setIsModalOpen(false);
-      setFormData({
-        table_id: "",
-        customer_name: "",
-        contact_number: "",
-        reservation_time: "",
-        guest_count: "",
-      });
-      toast.success("Reservasi berhasil dibuat!");
-    } catch (error: any) {
-      toast.error(error.message || "Gagal membuat reservasi");
-    }
-  };
+  const {
+    tables,
+    isModalOpen,
+    openModal,
+    closeModal,
+    formData,
+    setFormData,
+    handleSubmit,
+    isSubmitting,
+  } = useReservationFormModal(addReservation);
 
   const handleStatusChange = async (
     id: number,
@@ -89,215 +46,35 @@ export default function ReservationsFeature() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-3xl border border-slate-100 shadow-sm gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <CalendarRange className="text-[#c94430]" /> Reservasi Meja
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Kelola pemesanan meja dan status kedatangan pelanggan.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <Input
-              placeholder="Cari pelanggan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#c94430]/20"
-            />
-          </div>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-[#c94430] hover:bg-[#b03a28] text-white rounded-xl h-10 shrink-0"
-          >
-            <Plus size={18} className="md:mr-2" />{" "}
-            <span className="hidden md:inline">Buat Reservasi</span>
-          </Button>
-        </div>
-      </div>
+      <ReservationsHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onOpenModal={openModal}
+      />
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className="p-6 space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-xl" />
-            ))}
-          </div>
+          <ReservationsTableSkeleton />
+        ) : reservations.length === 0 ? (
+          <ReservationsEmptyState />
         ) : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-400 font-semibold uppercase">
-              <tr>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Meja & Tamu</th>
-                <th className="px-6 py-4">Waktu</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 font-medium text-slate-700">
-              {reservations.map((res) => (
-                <tr key={res.id} className="hover:bg-slate-50/50">
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <User size={14} /> {res.customer_name}
-                    </p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                      <Phone size={12} /> {res.contact_number || "-"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-[#c94430]">
-                      Meja {res.table?.table_number}
-                    </p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Users size={12} /> {res.guest_count} Orang
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {formatDateTime(res.reservation_time)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
-                        res.status === "pending"
-                          ? "bg-amber-50 text-amber-600 border-amber-100"
-                          : res.status === "confirmed"
-                            ? "bg-blue-50 text-blue-600 border-blue-100"
-                            : res.status === "completed"
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : "bg-red-50 text-red-600 border-red-100"
-                      }`}
-                    >
-                      {res.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex gap-2 justify-end">
-                      {res.status === "pending" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isProcessing}
-                          onClick={() => handleStatusChange(res.id, "confirm")}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50 h-8 text-xs"
-                        >
-                          Confirm
-                        </Button>
-                      )}
-                      {res.status === "confirmed" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isProcessing}
-                          onClick={() => handleStatusChange(res.id, "complete")}
-                          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 h-8 text-xs"
-                        >
-                          <CheckCircle2 size={14} className="mr-1" /> Complete
-                        </Button>
-                      )}
-                      {(res.status === "pending" ||
-                        res.status === "confirmed") && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isProcessing}
-                          onClick={() => handleStatusChange(res.id, "cancel")}
-                          className="text-red-600 border-red-200 hover:bg-red-50 h-8 text-xs"
-                        >
-                          <XCircle size={14} className="mr-1" /> Cancel
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ReservationsTable
+            reservations={reservations}
+            isProcessing={isProcessing}
+            onStatusChange={handleStatusChange}
+          />
         )}
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6">
-            <h3 className="font-bold text-lg mb-4">Buat Reservasi</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <Input
-                required
-                placeholder="Nama Pelanggan"
-                value={formData.customer_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, customer_name: e.target.value })
-                }
-              />
-              <Input
-                placeholder="Nomor Telepon (opsional)"
-                value={formData.contact_number}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact_number: e.target.value })
-                }
-              />
-              <Input
-                type="datetime-local"
-                required
-                value={formData.reservation_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, reservation_time: e.target.value })
-                }
-              />
-              <Input
-                type="number"
-                min="1"
-                required
-                placeholder="Jumlah Tamu"
-                value={formData.guest_count}
-                onChange={(e) =>
-                  setFormData({ ...formData, guest_count: e.target.value })
-                }
-              />
-              <Select
-                required
-                value={formData.table_id}
-                onValueChange={(v) => setFormData({ ...formData, table_id: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Meja..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables
-                    .filter((t) => t.status !== "maintenance")
-                    .map((t) => (
-                      <SelectItem key={t.id} value={t.id.toString()}>
-                        Meja {t.table_number} ({t.capacity} kursi) - {t.status}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-[#c94430] text-white"
-                >
-                  Simpan
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ReservationFormModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        tables={tables}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

@@ -13,8 +13,8 @@ class AuditLogService
         $this->auditLogRepo = $auditLogRepo;
     }
 
-    public function getLogs($entityType = null, $perPage = 20)
+   public function getLogs($entityType = null, $perPage = 20, $search = null)
     {
-        return $this->auditLogRepo->getPaginatedLogs($entityType, $perPage);
+        return $this->auditLogRepo->getPaginatedLogs($entityType, $perPage, $search);
     }
 }

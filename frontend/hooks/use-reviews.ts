@@ -13,6 +13,8 @@ export function useReviews() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [perPage, setPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
 
   useEffect(() => {
@@ -21,11 +23,15 @@ export function useReviews() {
 
   const fetchReviews = useCallback(async (page = 1, search = "") => {
     setLoading(true);
+
     try {
       const data = await getReviews(page, search);
+
       setReviews(data.reviews);
       setCurrentPage(data.currentPage);
       setTotalPages(data.totalPages);
+      setTotalItems(data.totalItems);
+      setPerPage(data.perPage);
     } catch (err) {
       console.error(err);
     } finally {
@@ -37,6 +43,7 @@ export function useReviews() {
     const delayDebounceFn = setTimeout(() => {
       fetchReviews(1, searchQuery);
     }, 500);
+
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, fetchReviews]);
 
@@ -45,6 +52,8 @@ export function useReviews() {
     loading,
     currentPage,
     totalPages,
+    totalItems,
+    perPage,
     searchQuery,
     setSearchQuery,
     fetchReviews,
