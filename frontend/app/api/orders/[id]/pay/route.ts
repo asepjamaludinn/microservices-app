@@ -1,15 +1,15 @@
 import { proxyRequest } from "@/lib/api-proxy";
 
-export async function PATCH(
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const body = await request.json();
 
-  return proxyRequest(`/api/orders/${id}/payment-status`, {
-    method: "PATCH",
+  return proxyRequest(`/api/orders/${id}/pay`, {
+    method: "POST",
     body,
-    errorMessage: "Gagal update status pembayaran",
+    errorMessage: "Gagal memproses pembayaran",
   });
 }

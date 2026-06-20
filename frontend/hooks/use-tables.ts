@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import type { RestaurantTable, TableStatus } from "@/types/table";
 import {
@@ -11,15 +12,22 @@ import {
 } from "@/services/tables.service";
 
 export function useTables() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const [filterStatus, setFilterStatus] = useState<
     TableStatus | "all_statuses"
   >("all_statuses");
   const [filterArea, setFilterArea] = useState("All Areas");
   const [activeActionMenu, setActiveActionMenu] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
 
   const fetchTables = async () => {
     setLoading(true);

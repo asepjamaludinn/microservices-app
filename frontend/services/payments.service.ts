@@ -1,4 +1,4 @@
-import type { Payment, PaginatedPaymentResponse } from "@/types/payment";
+import type { PaginatedPaymentResponse } from "@/types/payment";
 
 async function safeJson<T>(res: Response): Promise<T> {
   const data = await res.json();
@@ -6,8 +6,13 @@ async function safeJson<T>(res: Response): Promise<T> {
   return data;
 }
 
-export async function getPayments(page = 1) {
-  const res = await fetch(`/api/payments?page=${page}`, { cache: "no-store" });
+export async function getPayments(page = 1, search = "") {
+  const params = new URLSearchParams({ page: page.toString() });
+  if (search) params.append("search", search);
+
+  const res = await fetch(`/api/payments?${params.toString()}`, {
+    cache: "no-store",
+  });
   const response = await safeJson<{ data: PaginatedPaymentResponse }>(res);
   return {
     payments: response.data.data,

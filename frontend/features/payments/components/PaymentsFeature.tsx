@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, Receipt, ArrowLeftRight, Clock } from "lucide-react";
+import { Banknote, Receipt, ArrowLeftRight, Clock, Search } from "lucide-react";
 import toast from "react-hot-toast";
-
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePayments } from "@/hooks/use-payments";
@@ -17,6 +17,8 @@ export default function PaymentsFeature() {
     isProcessing,
     currentPage,
     totalPages,
+    searchQuery,
+    setSearchQuery,
     fetchPayments,
     handleRefund,
   } = usePayments();
@@ -93,6 +95,19 @@ export default function PaymentsFeature() {
           <p className="text-sm text-slate-500 mt-1">
             Lacak semua transaksi pembayaran dan struk yang telah dicetak.
           </p>
+        </div>
+
+        <div className="relative w-full md:w-72">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <Input
+            placeholder="Cari no. struk / nama..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#c94430]/20"
+          />
         </div>
       </div>
 

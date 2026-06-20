@@ -1,14 +1,22 @@
 "use client";
 
-import { MessageSquare, Star, Quote } from "lucide-react";
+import { MessageSquare, Star, Quote, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useReviews } from "@/hooks/use-reviews";
 import { formatDateTime } from "@/utils/date-formatters";
 
 export default function ReviewsFeature() {
-  const { reviews, loading, currentPage, totalPages, fetchReviews } =
-    useReviews();
+  const {
+    reviews,
+    loading,
+    currentPage,
+    totalPages,
+    searchQuery,
+    setSearchQuery,
+    fetchReviews,
+  } = useReviews();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -21,6 +29,18 @@ export default function ReviewsFeature() {
             Pantau ulasan dan *rating* yang diberikan pelanggan terhadap pesanan
             mereka.
           </p>
+        </div>
+        <div className="relative w-full md:w-72">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <Input
+            placeholder="Cari nama atau ulasan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#c94430]/20"
+          />
         </div>
       </div>
 

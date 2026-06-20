@@ -1,11 +1,41 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 export default function AdminHeader() {
   const { user } = useCurrentUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [searchValue, setSearchValue] = useState("");
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchValue.trim() !== "") {
+      let targetPath = pathname;
+
+      const searchablePaths = [
+        "/admin/dashboard/orders",
+        "/admin/dashboard/menus",
+        "/admin/dashboard/categories",
+        "/admin/dashboard/inventory",
+        "/admin/dashboard/tables",
+        "/admin/dashboard/payments",
+        "/admin/dashboard/reservations",
+        "/admin/dashboard/reviews",
+        "/admin/dashboard/audit-logs",
+      ];
+
+      if (!searchablePaths.includes(pathname)) {
+        targetPath = "/admin/dashboard/orders";
+      }
+
+      router.push(`${targetPath}?search=${encodeURIComponent(searchValue)}`);
+      setSearchValue(""); // Kosongkan input setelah mencari
+    }
+  };
 
   return (
     <header className="bg-white border-b border-slate-100 px-8 py-5 flex justify-between items-center sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm">
@@ -28,8 +58,11 @@ export default function AdminHeader() {
 
           <Input
             type="text"
-            placeholder="Search anything..."
-            className="pl-9 bg-slate-50 border-slate-100 rounded-xl focus-visible:ring-primary/20 focus-visible:border-primary"
+            placeholder="Search here... (Press Enter)"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleSearch}
+            className="pl-9 bg-slate-50 border-slate-100 rounded-xl focus-visible:ring-[#c94430]/20 focus-visible:border-[#c94430]"
           />
         </div>
 
@@ -38,7 +71,7 @@ export default function AdminHeader() {
           aria-label="Notifications"
         >
           <Bell size={18} strokeWidth={2} />
-          <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white" />
+          <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-[#c94430] rounded-full border-2 border-white" />
         </button>
       </div>
     </header>

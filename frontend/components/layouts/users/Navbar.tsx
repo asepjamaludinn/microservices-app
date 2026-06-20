@@ -30,12 +30,6 @@ export default function Navbar() {
           <a href="#menu" className="hover:text-[#c94430] transition-colors">
             Menu
           </a>
-          <a href="#" className="hover:text-[#c94430] transition-colors">
-            Blog
-          </a>
-          <a href="#" className="hover:text-[#c94430] transition-colors">
-            Contact
-          </a>
         </div>
 
         <div className="flex items-center gap-6">

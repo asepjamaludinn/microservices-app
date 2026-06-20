@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Plus,
@@ -25,14 +26,20 @@ import {
 import { Ingredient } from "@/types";
 
 export default function InventoryFeature() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const [selectedIngredient, setSelectedIngredient] =
     useState<Ingredient | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Modal State
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
+
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockActionType, setStockActionType] = useState<"in" | "out">("in");
   const [stockAmount, setStockAmount] = useState("");

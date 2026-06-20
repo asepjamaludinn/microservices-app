@@ -21,20 +21,20 @@ async function safeJson<T>(res: Response): Promise<T> {
   return data;
 }
 
-export async function getAuditLogs(page = 1, entityType = "All") {
+export async function getAuditLogs(page = 1, entityType = "All", search = "") {
   const params = new URLSearchParams({ page: page.toString() });
 
   if (entityType && entityType !== "All") {
     params.append("entity_type", entityType);
   }
+  if (search) {
+    params.append("search", search);
+  }
 
   const res = await fetch(`/api/audit-logs?${params.toString()}`, {
     cache: "no-store",
   });
-
   const response = await safeJson<PaginatedAuditResponse>(res);
-
-  // Akses struktur data sesuai dengan JSON response
   const payload = response.data;
 
   return {

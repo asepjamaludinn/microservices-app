@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation"; // TAMBAHKAN INI
 import type { Order, OrderStatus } from "@/types/order";
 import { filterOrdersByTab, type OrderTab } from "@/utils/order-formatters";
 import {
@@ -8,6 +9,9 @@ import {
 } from "@/services/orders.service";
 
 export function useAdminOrders() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<OrderTab>("All");
   const [loading, setLoading] = useState(true);
@@ -16,7 +20,11 @@ export function useAdminOrders() {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState("");
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
+
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
 
   const fetchOrders = useCallback(async (page = 1, search = "") => {
     setLoading(true);
@@ -59,10 +67,10 @@ export function useAdminOrders() {
     }
   };
 
-  const payBill = async (orderId: number) => {
+  const payBill = async (orderId: number, amountPaid: number) => {
     setIsProcessingAction(true);
     try {
-      await payOrderBill(orderId);
+      await payOrderBill(orderId, amountPaid);
       await fetchOrders(currentPage, searchQuery);
     } finally {
       setIsProcessingAction(false);

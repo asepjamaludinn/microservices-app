@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Category } from "@/types/category";
 import {
   getCategories,
@@ -10,9 +11,16 @@ import {
 } from "@/services/categories.service";
 
 export function useCategories() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
+
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
 
   const fetchCategories = async () => {
     setLoading(true);

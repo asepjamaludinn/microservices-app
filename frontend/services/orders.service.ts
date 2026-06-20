@@ -85,13 +85,13 @@ export async function updateOrderStatus(orderId: number, status: OrderStatus) {
   return safeJson(res);
 }
 
-export async function payOrderBill(orderId: number) {
-  const res = await fetch(`/api/orders/${orderId}/payment-status`, {
-    method: "PATCH",
+export async function payOrderBill(orderId: number, amountPaid: number) {
+  const res = await fetch(`/api/orders/${orderId}/pay`, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ payment_status: "paid" }),
+    body: JSON.stringify({ amount_paid: amountPaid }),
   });
 
   return safeJson(res);

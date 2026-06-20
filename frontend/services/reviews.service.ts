@@ -13,8 +13,13 @@ async function safeJson<T>(res: Response): Promise<T> {
   return data;
 }
 
-export async function getReviews(page = 1) {
-  const res = await fetch(`/api/reviews?page=${page}`, { cache: "no-store" });
+export async function getReviews(page = 1, search = "") {
+  const params = new URLSearchParams({ page: page.toString() });
+  if (search) params.append("search", search);
+
+  const res = await fetch(`/api/reviews?${params.toString()}`, {
+    cache: "no-store",
+  });
   const response = await safeJson<{ data: PaginatedReviewResponse }>(res);
   return {
     reviews: response.data.data,

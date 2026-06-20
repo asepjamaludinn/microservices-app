@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAuthServiceUrl } from "@/lib/server-auth";
-import { readJsonSafe } from "@/lib/api-response";
 
 export async function POST() {
   const cookieStore = await cookies();

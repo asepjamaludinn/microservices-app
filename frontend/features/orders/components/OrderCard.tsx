@@ -13,11 +13,10 @@ type OrderCardProps = {
   order: Order;
   isProcessingAction: boolean;
   onOpenDetail: (order: Order) => void;
-  onPayBill: (orderId: number) => void;
+  onPayBill: (order: Order) => void;
   onChangeStatus: (orderId: number, status: OrderStatus) => void;
   onPrint: (order: Order) => void;
 };
-
 export default function OrderCard({
   order,
   isProcessingAction,
@@ -118,7 +117,7 @@ export default function OrderCard({
               order.status !== "cancelled" && (
                 <Button
                   disabled={isProcessingAction}
-                  onClick={() => onPayBill(order.id)}
+                  onClick={() => onPayBill(order)}
                   className="flex-1 rounded-xl font-bold text-white bg-blue-500 hover:bg-blue-600 shadow-sm shadow-blue-500/20"
                 >
                   Pay Bill

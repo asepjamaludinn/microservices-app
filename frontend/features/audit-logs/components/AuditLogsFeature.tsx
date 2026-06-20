@@ -1,7 +1,15 @@
 "use client";
 
-import { History, Eye, X, FileJson, User, ActivitySquare } from "lucide-react";
-
+import {
+  History,
+  Eye,
+  X,
+  FileJson,
+  User,
+  ActivitySquare,
+  Search,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -20,6 +28,8 @@ export default function AuditLogsFeature() {
     loading,
     entityType,
     setEntityType,
+    searchQuery,
+    setSearchQuery,
     currentPage,
     totalPages,
     handlePageChange,
@@ -49,8 +59,7 @@ export default function AuditLogsFeature() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <History className="text-[#c94430]" /> Audit Logs
@@ -60,14 +69,24 @@ export default function AuditLogsFeature() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <p className="text-sm font-semibold text-slate-500">
-            Filter Entitas:
-          </p>
-          <div className="w-[180px]">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <Input
+              placeholder="Cari user atau aksi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#c94430]/20"
+            />
+          </div>
+
+          <div className="w-full sm:w-[150px]">
             <Select value={entityType} onValueChange={setEntityType}>
-              <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-xl">
-                <SelectValue placeholder="Pilih Entitas" />
+              <SelectTrigger className="w-full h-10 bg-slate-50 border-slate-200 rounded-xl">
+                <SelectValue placeholder="Entitas" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {ENTITY_TYPES.map((type) => (

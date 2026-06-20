@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Menu } from "@/types/menu";
 import type { Category } from "@/types/category";
 import type { Ingredient } from "@/types/inventory";
@@ -16,23 +17,34 @@ import {
 } from "@/services/menus.service";
 
 export function useMenus() {
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+
   const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
 
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
+
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
       const [menusData, categoriesData, ingredientsData] = await Promise.all([
-        getMenus({ category: selectedCategory, rating: selectedRating }),
+        getMenus({
+          search: urlSearchQuery,
+          category: selectedCategory,
+          rating: selectedRating,
+        }),
         getCategoriesList(),
         getIngredientsList(),
       ]);
@@ -44,7 +56,7 @@ export function useMenus() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedRating]);
+  }, [urlSearchQuery, selectedCategory, selectedRating]);
 
   useEffect(() => {
     fetchInitialData();

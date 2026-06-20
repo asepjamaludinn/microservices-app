@@ -46,6 +46,13 @@ export default function AdminDashboardFeature() {
   const totalRevenue = analytics?.today_revenue ?? 0;
   const totalCustomers = analytics?.total_customers ?? 0;
 
+  // Baca metrics baru
+  const orderTypes = analytics?.order_types ?? {
+    dine_in: { total: 0, percentage: 0 },
+    takeaway: { total: 0, percentage: 0 },
+    online: { total: 0, percentage: 0 },
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -428,22 +435,22 @@ export default function AdminDashboardFeature() {
           <div className="space-y-8">
             <OrderTypeProgress
               title="Dine-In"
-              percentage={0}
-              total={0}
+              percentage={orderTypes.dine_in.percentage}
+              total={orderTypes.dine_in.total}
               icon={<Utensils size={20} strokeWidth={2.5} />}
             />
 
             <OrderTypeProgress
               title="Takeaway"
-              percentage={0}
-              total={0}
+              percentage={orderTypes.takeaway.percentage}
+              total={orderTypes.takeaway.total}
               icon={<ReceiptText size={20} strokeWidth={2.5} />}
             />
 
             <OrderTypeProgress
               title="Online"
-              percentage={0}
-              total={0}
+              percentage={orderTypes.online.percentage}
+              total={orderTypes.online.total}
               icon={<Utensils size={20} strokeWidth={2.5} />}
             />
           </div>
