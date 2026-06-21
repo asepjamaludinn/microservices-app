@@ -11,6 +11,14 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\PaymentController;
 
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'Success',
+        'message' => 'Service is running smoothly',
+        'data' => null
+    ]);
+});
+
 Route::get('menus', [MenuController::class, 'index']);
 Route::get('categories', [MenuController::class, 'getCategories']);
 Route::get('reviews', [ReviewController::class, 'index']); 

@@ -4,6 +4,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'Success',
+        'message' => 'Service is running smoothly',
+        'data' => null
+    ]);
+});
+
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('reset-password-direct', [AuthController::class, 'directResetPassword'])->middleware('throttle:3,1');
