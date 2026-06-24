@@ -25,6 +25,7 @@ BiteBox adalah sistem manajemen restoran _end-to-end_ berskala produksi yang dib
 Untuk memudahkan pengujian dan integrasi, seluruh dokumentasi API telah di-_publish_ secara interaktif. Anda dapat melihat contoh _request_, _response_, dan mencoba _endpoint_ secara langsung.
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](./BiteBox-API.postman_collection.json)
+
 **[Klik di sini untuk melihat Dokumentasi API Postman](https://documenter.getpostman.com/view/39954677/2sBXwvK98V)**
 
 ---
